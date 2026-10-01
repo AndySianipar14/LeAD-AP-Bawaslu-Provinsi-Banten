@@ -1,0 +1,8 @@
+{
+  "name": "LeAD-AP Bawaslu - Sistem Penelusuran Perkara Sidang Administratif Pemilu",
+  "description": "Layanan e-Administrasi (Sidang) Administratif Pemilu model SIPP untuk Bawaslu Provinsi, dan Bawaslu Kabupaten/Kota berdasarkan Perbawaslu Nomor 8 Tahun 2022.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
