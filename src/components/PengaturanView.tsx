@@ -1,10 +1,36 @@
 import React, { useState } from 'react';
-import { Settings, Calendar, MapPin, Users, AlertTriangle, Plus, Trash2, Save, Check } from 'lucide-react';
+import { 
+  Settings, 
+  Calendar, 
+  MapPin, 
+  Users, 
+  AlertTriangle, 
+  Plus, 
+  Trash2, 
+  Save, 
+  Check, 
+  Lock, 
+  Key, 
+  ShieldCheck,
+  HardDrive,
+  Mail,
+  ExternalLink,
+  RefreshCw
+} from 'lucide-react';
 import { DEFAULT_HARI_LIBUR, KODE_WILAYAH_BAWASLU } from '../utils/businessLogic';
 import { HariLibur } from '../types/leadAp';
+import { 
+  getCachedAccessToken, 
+  getCachedUser, 
+  TARGET_DRIVE_EMAIL 
+} from '../services/googleDriveService';
 
-export const PengaturanView: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'kalender' | 'wilayah' | 'ambang'>('kalender');
+interface PengaturanViewProps {
+  onOpenDriveManager?: () => void;
+}
+
+export const PengaturanView: React.FC<PengaturanViewProps> = ({ onOpenDriveManager }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'kalender' | 'wilayah' | 'ambang' | 'keamanan' | 'drive'>('kalender');
   const [hariLiburList, setHariLiburList] = useState<HariLibur[]>(DEFAULT_HARI_LIBUR);
   const [newLiburDate, setNewLiburDate] = useState<string>('');
   const [newLiburKet, setNewLiburKet] = useState<string>('');
@@ -13,6 +39,27 @@ export const PengaturanView: React.FC = () => {
   const [ambangWaspada, setAmbangWaspada] = useState<number>(5);
   const [ambangKritis, setAmbangKritis] = useState<number>(2);
   const [savedAlert, setSavedAlert] = useState<boolean>(false);
+
+  // Auto sync drive setting
+  const [autoDriveSync, setAutoDriveSync] = useState<boolean>(() => {
+    return localStorage.getItem('leadap_auto_drive_sync') !== 'false';
+  });
+
+  // Akun Admin
+  const [adminUser, setAdminUser] = useState<string>(
+    localStorage.getItem('leadap_admin_username') || 'admin_banten'
+  );
+  const [adminPass, setAdminPass] = useState<string>(
+    localStorage.getItem('leadap_admin_password') || 'Bawaslu2028!'
+  );
+  const [adminSaved, setAdminSaved] = useState<boolean>(false);
+
+  const handleSaveCredentials = () => {
+    localStorage.setItem('leadap_admin_username', adminUser.trim());
+    localStorage.setItem('leadap_admin_password', adminPass);
+    setAdminSaved(true);
+    setTimeout(() => setAdminSaved(false), 2500);
+  };
 
   const handleAddLibur = () => {
     if (!newLiburDate || !newLiburKet) return;
@@ -89,6 +136,30 @@ export const PengaturanView: React.FC = () => {
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>Ambang Batas Peringatan HK</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('keamanan')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeSubTab === 'keamanan'
+                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                : 'text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>Akun & Kata Sandi Admin</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('drive')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeSubTab === 'drive'
+                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                : 'text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <HardDrive className="w-3.5 h-3.5" />
+            <span>Penyimpanan Google Drive</span>
           </button>
         </div>
 
@@ -252,6 +323,133 @@ export const PengaturanView: React.FC = () => {
                   <span>{savedAlert ? 'Pengaturan Disimpan!' : 'Simpan Parameter'}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content Tab: Keamanan & Akun Admin */}
+        {activeSubTab === 'keamanan' && (
+          <div className="p-5 space-y-4 text-xs max-w-xl">
+            <span className="font-bold text-slate-800 block text-xs uppercase tracking-wide">
+              Kelola Kredensial Autentikasi Administrator:
+            </span>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-950 leading-relaxed">
+              Pengguna dengan peran <strong>Administrator</strong> memiliki wewenang untuk menambah, mengubah, dan menghapus seluruh perkara, persidangan, serta menghubungkan Google Drive.
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Username Administrator:
+                </label>
+                <input
+                  type="text"
+                  value={adminUser}
+                  onChange={(e) => setAdminUser(e.target.value)}
+                  className="w-full p-2 border rounded-lg bg-white font-medium text-xs text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Kata Sandi (Password):
+                </label>
+                <input
+                  type="password"
+                  value={adminPass}
+                  onChange={(e) => setAdminPass(e.target.value)}
+                  className="w-full p-2 border rounded-lg bg-white font-medium text-xs text-slate-800"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={handleSaveCredentials}
+                  className="bg-red-700 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-sm"
+                >
+                  {adminSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>{adminSaved ? 'Kredensial Admin Diperbarui!' : 'Simpan Kredensial Admin'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content Tab: Google Drive Storage */}
+        {activeSubTab === 'drive' && (
+          <div className="p-5 space-y-4 text-xs max-w-2xl">
+            <span className="font-bold text-slate-800 block text-xs uppercase tracking-wide">
+              Konfigurasi Penyimpanan Google Drive Bawaslu Banten:
+            </span>
+
+            <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-950 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-700" />
+                <span className="font-bold text-xs">Akun Google Drive Resmi Terhubung:</span>
+              </div>
+              <p className="font-mono text-sm font-bold text-blue-900 bg-white p-2 rounded-lg border border-blue-200">
+                {TARGET_DRIVE_EMAIL}
+              </p>
+              <p className="text-[11px] text-slate-600 mt-1">
+                Segala file perkara, dokumen Berita Acara (ADM.BA-REG), Salinan Putusan (ADM.PUTUSAN), risalah sidang, serta file alat bukti masukan disimpan dan disinkronkan ke akun Google Drive ini.
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+              <span className="font-bold text-slate-800 block uppercase tracking-wide text-xs">
+                Folder Kerja di Google Drive:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
+                  <span className="font-mono font-bold text-emerald-800 text-[11px] block">01_Database_dan_Cadangan</span>
+                  <span className="text-[10px] text-slate-500">File JSON snapshot database seluruh perkara & riwayat.</span>
+                </div>
+                <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
+                  <span className="font-mono font-bold text-blue-800 text-[11px] block">02_Dokumen_Sidang_Resmi</span>
+                  <span className="text-[10px] text-slate-500">Formulir dinas ADM.BA-REG, SPS, Putusan, dll.</span>
+                </div>
+                <div className="p-2.5 bg-white border border-slate-200 rounded-lg">
+                  <span className="font-mono font-bold text-purple-800 text-[11px] block">03_Berkas_Alat_Bukti</span>
+                  <span className="text-[10px] text-slate-500">Lampiran bukti pelapor & terlapor (P-n/T-n).</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-slate-800 block">Sinkronisasi Otomatis (Auto-Sync)</span>
+                  <span className="text-[11px] text-slate-500">
+                    Kirim pembaruan database secara otomatis ke Google Drive setiap kali perkara ditambah atau diubah.
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoDriveSync}
+                    onChange={(e) => {
+                      const val = e.target.checked;
+                      setAutoDriveSync(val);
+                      localStorage.setItem('leadap_auto_drive_sync', String(val));
+                    }}
+                    className="rounded text-blue-600 w-4 h-4"
+                  />
+                </label>
+              </div>
+
+              {onOpenDriveManager && (
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-slate-600">Status Akun: {getCachedAccessToken() ? 'Terhubung' : 'Siap Dihubungkan'}</span>
+                  <button
+                    onClick={onOpenDriveManager}
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs shadow-xs cursor-pointer"
+                  >
+                    <HardDrive className="w-3.5 h-3.5" />
+                    <span>Buka Pengelola Google Drive</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

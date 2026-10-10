@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { X, Printer, Download, Copy, Check, FileText, Scale } from 'lucide-react';
+import { X, Printer, Download, Copy, Check, FileText, Scale, HardDrive } from 'lucide-react';
 import { Perkara } from '../types/leadAp';
 import { DAFTAR_18_FORMULIR } from '../utils/businessLogic';
+import { DAFTAR_21_FORMULIR, getDefaultFormulirContent } from '../data/daftarFormulirMaster';
+import { 
+  getCachedAccessToken, 
+  uploadDokumenSidangToDrive, 
+  TARGET_DRIVE_EMAIL 
+} from '../services/googleDriveService';
 
 interface FormulirGeneratorModalProps {
   perkara?: Perkara | null;
@@ -16,9 +22,22 @@ export const FormulirGeneratorModal: React.FC<FormulirGeneratorModalProps> = ({
 }) => {
   const [selectedFormKode, setSelectedFormKode] = useState<string>(initialKode);
   const [copied, setCopied] = useState<boolean>(false);
+  const [savingToDrive, setSavingToDrive] = useState<boolean>(false);
+  const [savedToDriveMsg, setSavedToDriveMsg] = useState<string | null>(null);
 
+  // Check in 21 master list or 18 list
+  const formMaster21 = DAFTAR_21_FORMULIR.find(
+    (f) => f.kode.toLowerCase() === selectedFormKode.toLowerCase() ||
+           f.kode.toLowerCase().includes(selectedFormKode.toLowerCase())
+  );
   const selectedForm =
-    DAFTAR_18_FORMULIR.find((f) => f.kode === selectedFormKode) || DAFTAR_18_FORMULIR[0];
+    DAFTAR_18_FORMULIR.find((f) => f.kode === selectedFormKode) || {
+      kode: formMaster21?.kode || selectedFormKode,
+      nama: formMaster21?.perihal || selectedFormKode,
+      fungsi: formMaster21?.rujukan || 'Naskah Dinas Perbawaslu',
+      penandaTangan: 'Ketua / Majelis Bawaslu',
+      tahap: formMaster21?.keterangan || 'Persidangan'
+    };
 
   // Helper untuk generate isi teks formulir resmi Bawaslu
   const generateFormContent = (kode: string) => {
@@ -219,6 +238,9 @@ Anggota Pengawas Pemilu,
 (Tanda Tangan di Tempat Kejadian)`;
 
       default:
+        if (formMaster21) {
+          return getDefaultFormulirContent(formMaster21);
+        }
         return `FORMULIR MODEL ${selectedForm.kode}
 ${selectedForm.nama}
 Peraturan Bawaslu Nomor 8 Tahun 2022
@@ -245,6 +267,27 @@ ${selectedForm.penandaTangan}`;
     window.print();
   };
 
+  const handleSaveToDrive = async () => {
+    const token = getCachedAccessToken();
+    if (!token) {
+      alert(`Silakan hubungkan Google Drive (${TARGET_DRIVE_EMAIL}) terlebih dahulu melalui tombol Google Drive di bilah atas.`);
+      return;
+    }
+    setSavingToDrive(true);
+    setSavedToDriveMsg(null);
+    try {
+      const regNumber = perkara?.nomor_register || 'TEMPLATE_FORMULIR';
+      const textContent = generateFormContent(selectedFormKode);
+      await uploadDokumenSidangToDrive(token, regNumber, selectedForm.kode, selectedForm.nama, textContent);
+      setSavedToDriveMsg(`Tersimpan ke Drive (${TARGET_DRIVE_EMAIL})!`);
+      setTimeout(() => setSavedToDriveMsg(null), 3500);
+    } catch (err: any) {
+      alert('Gagal menyimpan formulir ke Google Drive: ' + err.message);
+    } finally {
+      setSavingToDrive(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-300 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -259,29 +302,38 @@ ${selectedForm.penandaTangan}`;
                 <span>GENERATOR 18 FORMULIR RESMI PERBAWASLU 8/2022</span>
               </h2>
               <p className="text-xs text-slate-300 font-mono mt-0.5">
-                Model Dokumen Peradilan Sidang Administratif Pemilu
+                Model Dokumen Peradilan Sidang Administratif Pemilu • Akun Drive: <span className="text-amber-400">{TARGET_DRIVE_EMAIL}</span>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleSaveToDrive}
+              disabled={savingToDrive}
+              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title={`Simpan formulir ini ke folder Dokumen Sidang di Google Drive (${TARGET_DRIVE_EMAIL})`}
+            >
+              <HardDrive className="w-3.5 h-3.5" />
+              <span>{savingToDrive ? 'Menyimpan...' : savedToDriveMsg || 'Simpan ke Drive'}</span>
+            </button>
+            <button
               onClick={handlePrint}
-              className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-slate-700"
+              className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-slate-700 cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak Dokumen</span>
             </button>
             <button
               onClick={handleCopy}
-              className="bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+              className="bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Tersalin!' : 'Salin Teks'}</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

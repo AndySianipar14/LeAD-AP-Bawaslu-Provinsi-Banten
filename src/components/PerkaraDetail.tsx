@@ -9,19 +9,20 @@ import {
   Gavel, 
   GitPullRequestDraft, 
   History, 
-  Printer, 
   Download, 
   ExternalLink, 
   AlertCircle, 
   CheckCircle2, 
   Play, 
   ShieldCheck, 
-  Sparkles,
-  Clock,
-  Plus
+  Clock, 
+  Plus, 
+  Edit3, 
+  Trash2
 } from 'lucide-react';
 import { Perkara, UserRole, JadwalSidang, AlatBukti, KeteranganSaksiAhli } from '../types/leadAp';
 import { STATUS_PERKARA_MAP, getStatusTenggatHK } from '../utils/businessLogic';
+import { BerkasDokumenSection } from './BerkasDokumenSection';
 
 interface PerkaraDetailProps {
   perkara: Perkara;
@@ -32,6 +33,8 @@ interface PerkaraDetailProps {
   onOpenAiAnalyst: (perkara: Perkara) => void;
   onUpdatePerkara: (updated: Perkara) => void;
   onOpenKoreksiModal: (perkara: Perkara) => void;
+  onOpenEditPerkara?: (perkara: Perkara) => void;
+  onOpenDriveManager?: () => void;
 }
 
 export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
@@ -42,10 +45,12 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
   onOpenFormGenerator,
   onOpenAiAnalyst,
   onUpdatePerkara,
-  onOpenKoreksiModal
+  onOpenKoreksiModal,
+  onOpenEditPerkara,
+  onOpenDriveManager
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'data_umum' | 'penetapan' | 'jadwal_sidang' | 'alat_bukti' | 'saksi_ahli' | 'putusan' | 'koreksi' | 'riwayat'
+    'data_umum' | 'penetapan' | 'jadwal_sidang' | 'alat_bukti' | 'saksi_ahli' | 'putusan' | 'koreksi' | 'riwayat' | 'berkas_drive'
   >('data_umum');
 
   const statusMeta = STATUS_PERKARA_MAP[perkara.status] || {
@@ -57,6 +62,17 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
 
   const tenggatInfo = getStatusTenggatHK(perkara.lama_proses_hk);
   const isInternal = currentRole !== 'publik';
+
+  // State untuk form tambah cepat bukti / saksi / jadwal oleh admin
+  const [showAddBukti, setShowAddBukti] = useState<boolean>(false);
+  const [newBuktiKode, setNewBuktiKode] = useState<string>('P-' + ((perkara.alat_bukti?.length || 0) + 1));
+  const [newBuktiUraian, setNewBuktiUraian] = useState<string>('');
+  const [newBuktiPengaju, setNewBuktiPengaju] = useState<'Pelapor' | 'Terlapor'>('Pelapor');
+
+  const [showAddJadwal, setShowAddJadwal] = useState<boolean>(false);
+  const [newJadwalAgenda, setNewJadwalAgenda] = useState<string>('');
+  const [newJadwalTgl, setNewJadwalTgl] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [newJadwalJam, setNewJadwalJam] = useState<string>('09:00 WIB');
 
   // Evaluasi kecukupan bukti sah (Pasal 36 ayat 2)
   const buktiSahCount = (perkara.alat_bukti || []).filter((b) => Boolean(b.tgl_disahkan)).length;
@@ -72,6 +88,71 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
     (perkara.status === 'S09' || perkara.status === 'S10') &&
     !perkara.koreksi;
 
+  const handleAdminAddBukti = () => {
+    if (!newBuktiUraian) return;
+    const newB: AlatBukti = {
+      id: 'ab-' + Date.now(),
+      perkara_id: perkara.id,
+      kode: newBuktiKode,
+      pengaju: newBuktiPengaju,
+      bentuk: 'Surat',
+      asli_salinan: 'Asli',
+      uraian: newBuktiUraian,
+      tgl_disahkan: new Date().toISOString().split('T')[0],
+      disahkan_oleh: 'Ketua Majelis'
+    };
+    const updated = {
+      ...perkara,
+      alat_bukti: [...(perkara.alat_bukti || []), newB]
+    };
+    onUpdatePerkara(updated);
+    setNewBuktiUraian('');
+    setShowAddBukti(false);
+  };
+
+  const handleAdminDeleteBukti = (buktiId: string) => {
+    if (window.confirm('Hapus alat bukti ini?')) {
+      const updated = {
+        ...perkara,
+        alat_bukti: (perkara.alat_bukti || []).filter((b) => b.id !== buktiId)
+      };
+      onUpdatePerkara(updated);
+    }
+  };
+
+  const handleAdminAddJadwal = () => {
+    if (!newJadwalAgenda) return;
+    const newJ: JadwalSidang = {
+      id: 'js-' + Date.now(),
+      perkara_id: perkara.id,
+      ke: (perkara.jadwal_sidang?.length || 0) + 1,
+      tanggal: newJadwalTgl,
+      jam: newJadwalJam,
+      agenda: newJadwalAgenda,
+      mode: 'Luring',
+      lokasi_atau_tautan: 'Ruang Sidang Utama Bawaslu Provinsi Banten',
+      status: 'Terjadwal',
+      jumlah_pemberitahuan: 1
+    };
+    const updated = {
+      ...perkara,
+      jadwal_sidang: [...(perkara.jadwal_sidang || []), newJ]
+    };
+    onUpdatePerkara(updated);
+    setNewJadwalAgenda('');
+    setShowAddJadwal(false);
+  };
+
+  const handleAdminDeleteJadwal = (jadwalId: string) => {
+    if (window.confirm('Hapus jadwal sidang ini?')) {
+      const updated = {
+        ...perkara,
+        jadwal_sidang: (perkara.jadwal_sidang || []).filter((j) => j.id !== jadwalId)
+      };
+      onUpdatePerkara(updated);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Top Navigation Bar & Action Row */}
@@ -85,21 +166,23 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
         </button>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* AI Legal Analysis for this specific case */}
-          <button
-            onClick={() => onOpenAiAnalyst(perkara)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 px-3 py-1.5 rounded-lg shadow-sm border border-purple-400/40"
-            title="Analisis yuridis fakta persidangan, kecukupan bukti, dan rekomendasi amar putusan dengan AI Thinking"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Analisis Yuridis AI</span>
-          </button>
+          {/* Admin Edit Perkara */}
+          {isInternal && (
+            <button
+              onClick={() => onOpenEditPerkara && onOpenEditPerkara(perkara)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg shadow-sm border border-slate-600 transition-colors cursor-pointer"
+              title="Edit data pokok perkara, pihak, status, petitum (Admin)"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+              <span>Edit Perkara</span>
+            </button>
+          )}
 
           {/* Jalankan Sidang Simulator jika internal */}
           {isInternal && (
             <button
               onClick={() => onOpenSidangSimulator(perkara)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded-lg shadow-sm border border-red-800"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded-lg shadow-sm border border-red-800 cursor-pointer"
               title="Simulator Persidangan Pemeriksaan Sesuai Panduan Sidang & Perbawaslu 8/2022"
             >
               <Gavel className="w-3.5 h-3.5" />
@@ -107,20 +190,11 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
             </button>
           )}
 
-          {/* Buka Generator Formulir */}
-          <button
-            onClick={() => onOpenFormGenerator(perkara)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-amber-400 hover:bg-amber-300 px-3 py-1.5 rounded-lg shadow-sm"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Formulir ADM</span>
-          </button>
-
-          {/* Ajukan Koreksi jika status putusan Prov/Kab/Kota */}
-          {canAjukanKoreksi && (
+          {/* Ajukan Koreksi jika status putusan Prov/Kab/Kota (Admin Only) */}
+          {isInternal && canAjukanKoreksi && (
             <button
               onClick={() => onOpenKoreksiModal(perkara)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg shadow-sm"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer"
             >
               <GitPullRequestDraft className="w-3.5 h-3.5" />
               <span>Ajukan Koreksi (≤ 3 HK)</span>
@@ -206,7 +280,8 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
             { id: 'saksi_ahli', label: 'Saksi/Ahli/Terkait', icon: <Users className="w-3.5 h-3.5" />, badge: perkara.keterangan?.length },
             { id: 'putusan', label: 'Putusan', icon: <Gavel className="w-3.5 h-3.5" /> },
             { id: 'koreksi', label: 'Koreksi', icon: <GitPullRequestDraft className="w-3.5 h-3.5" />, highlight: Boolean(perkara.koreksi) },
-            { id: 'riwayat', label: 'Riwayat Perkara', icon: <History className="w-3.5 h-3.5" /> }
+            { id: 'riwayat', label: 'Riwayat Perkara', icon: <History className="w-3.5 h-3.5" /> },
+            { id: 'berkas_drive', label: 'Berkas Dokumen', icon: <FileText className="w-3.5 h-3.5" /> }
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -469,15 +544,60 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
               </div>
 
               {isInternal && (
-                <button
-                  onClick={() => onOpenSidangSimulator(perkara)}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded-lg shadow-sm"
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  <span>Jalankan Sidang Aktif</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowAddJadwal(!showAddJadwal)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-800 bg-amber-400 hover:bg-amber-300 px-3 py-1.5 rounded-lg shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Tambah Jadwal</span>
+                  </button>
+                  <button
+                    onClick={() => onOpenSidangSimulator(perkara)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded-lg shadow-sm"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    <span>Jalankan Sidang Aktif</span>
+                  </button>
+                </div>
               )}
             </div>
+
+            {/* Form Tambah Jadwal oleh Admin */}
+            {isInternal && showAddJadwal && (
+              <div className="p-3.5 bg-amber-50/70 border border-amber-300 rounded-xl space-y-2">
+                <span className="font-bold text-slate-800 text-xs block">Tambah Agenda Sidang Baru:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    value={newJadwalAgenda}
+                    onChange={(e) => setNewJadwalAgenda(e.target.value)}
+                    placeholder="Agenda sidang (cth: Pembacaan Jawaban)..."
+                    className="p-2 border rounded-lg bg-white text-xs sm:col-span-2"
+                  />
+                  <input
+                    type="date"
+                    value={newJadwalTgl}
+                    onChange={(e) => setNewJadwalTgl(e.target.value)}
+                    className="p-2 border rounded-lg bg-white text-xs font-mono"
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    onClick={() => setShowAddJadwal(false)}
+                    className="px-3 py-1 text-slate-600 hover:bg-slate-200 rounded text-xs"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleAdminAddJadwal}
+                    className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded text-xs"
+                  >
+                    Simpan Jadwal
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -491,6 +611,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                     <th className="py-2.5 px-3 w-28 text-center">Status</th>
                     <th className="py-2.5 px-3 min-w-[180px]">Alasan Ditunda / Catatan</th>
                     <th className="py-2.5 px-3 w-28 text-center">Siaran Langsung</th>
+                    {isInternal && <th className="py-2.5 px-3 w-16 text-center">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -542,11 +663,22 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                             <span className="text-slate-400 text-[11px]">—</span>
                           )}
                         </td>
+                        {isInternal && (
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={() => handleAdminDeleteJadwal(sidang.id)}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
+                              title="Hapus Jadwal Sidang (Admin)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="py-6 text-center text-slate-400">
+                      <td colSpan={isInternal ? 9 : 8} className="py-6 text-center text-slate-400">
                         Belum ada jadwal persidangan yang dimasukkan.
                       </td>
                     </tr>
@@ -571,22 +703,79 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                 </p>
               </div>
 
-              {/* Status Kecukupan 2 Bukti Sah (Pasal 36 ayat 2) */}
-              <div className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 ${
-                isBuktiCukup
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                  : 'bg-amber-50 text-amber-800 border-amber-300'
-              }`}>
-                {isBuktiCukup ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-amber-600" />
+              <div className="flex items-center gap-2">
+                {isInternal && (
+                  <button
+                    onClick={() => setShowAddBukti(!showAddBukti)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-800 bg-amber-400 hover:bg-amber-300 px-3 py-1.5 rounded-lg shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Tambah Bukti</span>
+                  </button>
                 )}
-                <span>
-                  {buktiSahCount} Alat Bukti Disahkan (Syarat Min. 2 Bukti Sah: {isBuktiCukup ? 'Terpenuhi' : 'Belum Terpenuhi'})
-                </span>
+
+                {/* Status Kecukupan 2 Bukti Sah (Pasal 36 ayat 2) */}
+                <div className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 ${
+                  isBuktiCukup
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    : 'bg-amber-50 text-amber-800 border-amber-300'
+                }`}>
+                  {isBuktiCukup ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                  )}
+                  <span>
+                    {buktiSahCount} Disahkan ({isBuktiCukup ? 'Syarat Terpenuhi' : 'Kurang dari 2 Bukti'})
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Form Tambah Bukti oleh Admin */}
+            {isInternal && showAddBukti && (
+              <div className="p-3.5 bg-amber-50/70 border border-amber-300 rounded-xl space-y-2">
+                <span className="font-bold text-slate-800 text-xs block">Tambah Alat Bukti Baru:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                  <input
+                    type="text"
+                    value={newBuktiKode}
+                    onChange={(e) => setNewBuktiKode(e.target.value)}
+                    placeholder="Kode (cth: P-1)"
+                    className="p-2 border rounded-lg bg-white text-xs font-mono font-bold"
+                  />
+                  <select
+                    value={newBuktiPengaju}
+                    onChange={(e) => setNewBuktiPengaju(e.target.value as any)}
+                    className="p-2 border rounded-lg bg-white text-xs font-semibold"
+                  >
+                    <option value="Pelapor">Pelapor</option>
+                    <option value="Terlapor">Terlapor</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={newBuktiUraian}
+                    onChange={(e) => setNewBuktiUraian(e.target.value)}
+                    placeholder="Uraian dokumen / berkas alat bukti..."
+                    className="p-2 border rounded-lg bg-white text-xs sm:col-span-2"
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    onClick={() => setShowAddBukti(false)}
+                    className="px-3 py-1 text-slate-600 hover:bg-slate-200 rounded text-xs"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleAdminAddBukti}
+                    className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded text-xs"
+                  >
+                    Simpan & Sahkan Bukti
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -598,6 +787,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                     <th className="py-2.5 px-3 w-28">Keaslian</th>
                     <th className="py-2.5 px-3 min-w-[280px]">Uraian Materi Bukti</th>
                     <th className="py-2.5 px-3 w-32 text-center">Pengesahan Majelis</th>
+                    {isInternal && <th className="py-2.5 px-3 w-16 text-center">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -635,11 +825,22 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                             <span className="text-slate-400 italic text-[11px]">Belum disahkan</span>
                           )}
                         </td>
+                        {isInternal && (
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={() => handleAdminDeleteBukti(bukti.id)}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
+                              title="Hapus Bukti (Admin)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-slate-400">
+                      <td colSpan={isInternal ? 7 : 6} className="py-6 text-center text-slate-400">
                         Belum ada alat bukti yang diajukan.
                       </td>
                     </tr>
@@ -964,6 +1165,15 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
               </table>
             </div>
           </div>
+        )}
+
+        {/* Tab 8: Berkas Dokumen (List Upload PDF: Permohonan Pelapor, Jawaban Terlapor, Daftar Alat Bukti, BA Sumpah Saksi/Ahli, BA Pemeriksaan Sidang) */}
+        {activeTab === 'berkas_drive' && (
+          <BerkasDokumenSection
+            perkara={perkara}
+            currentRole={currentRole}
+            onUpdatePerkara={onUpdatePerkara}
+          />
         )}
       </div>
     </div>

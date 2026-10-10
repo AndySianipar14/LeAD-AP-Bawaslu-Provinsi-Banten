@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Eye, Filter, ArrowUpDown, ShieldAlert, Sparkles, ExternalLink, RefreshCw } from 'lucide-react';
+import { Search, Eye, Filter, ArrowUpDown, ShieldAlert, Sparkles, ExternalLink, RefreshCw, Edit3, Trash2 } from 'lucide-react';
 import { Perkara, UserRole } from '../types/leadAp';
 import { STATUS_PERKARA_MAP, getStatusTenggatHK } from '../utils/businessLogic';
 
@@ -8,13 +8,17 @@ interface PerkaraTableProps {
   onSelectPerkara: (perkara: Perkara) => void;
   currentRole: UserRole;
   filterPreset?: string | null;
+  onEditPerkara?: (perkara: Perkara) => void;
+  onDeletePerkara?: (perkaraId: string) => void;
 }
 
 export const PerkaraTable: React.FC<PerkaraTableProps> = ({
   perkaraList,
   onSelectPerkara,
   currentRole,
-  filterPreset
+  filterPreset,
+  onEditPerkara,
+  onDeletePerkara
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJalur, setSelectedJalur] = useState<string>('all');
@@ -112,11 +116,6 @@ export const PerkaraTable: React.FC<PerkaraTableProps> = ({
           </h2>
           <p className="text-xs text-slate-300 mt-0.5">
             Pembaruan Data: Terkini secara waktu nyata | Total: {filteredData.length} Perkara
-            {currentRole === 'publik' && (
-              <span className="ml-2 text-emerald-400 font-medium">
-                (Perlindungan Data Pribadi UU 27/2022 Aktif)
-              </span>
-            )}
           </p>
         </div>
 
@@ -356,14 +355,38 @@ export const PerkaraTable: React.FC<PerkaraTableProps> = ({
                     </td>
 
                     <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => onSelectPerkara(perkara)}
-                        className="inline-flex items-center gap-1 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 border border-slate-300 rounded px-2.5 py-1 font-semibold text-xs transition-colors"
-                        title="Lihat Detail Berkas Perkara Lengkap"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>[detil]</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => onSelectPerkara(perkara)}
+                          className="inline-flex items-center gap-1 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 border border-slate-300 rounded px-2 py-1 font-semibold text-xs transition-colors"
+                          title="Lihat Detail Berkas Perkara Lengkap"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>[detil]</span>
+                        </button>
+
+                        {currentRole === 'admin' && (
+                          <>
+                            <button
+                              onClick={() => onEditPerkara && onEditPerkara(perkara)}
+                              className="p-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded transition-colors"
+                              title="Edit Data Perkara (Admin)"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const ok = window.confirm(`Hapus perkara ${perkara.nomor_register}?`);
+                                if (ok && onDeletePerkara) onDeletePerkara(perkara.id);
+                              }}
+                              className="p-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded transition-colors"
+                              title="Hapus Perkara (Admin)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

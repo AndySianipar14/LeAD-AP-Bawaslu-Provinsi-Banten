@@ -45,8 +45,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: number; internalOnly?: boolean }[] = [
     { id: 'beranda', label: 'Beranda', icon: <Home className="w-4 h-4" /> },
     { id: 'pelanggaran_biasa', label: 'Pelanggaran Administratif', icon: <FileSpreadsheet className="w-4 h-4" /> },
-    { id: 'tsm', label: 'Adm. TSM', icon: <AlertOctagon className="w-4 h-4" /> },
-    { id: 'acara_cepat', label: 'Acara Cepat', icon: <Zap className="w-4 h-4" /> },
+    ...(isInternal
+      ? [
+          { id: 'tsm' as ActiveTab, label: 'Adm. TSM', icon: <AlertOctagon className="w-4 h-4" /> },
+          { id: 'acara_cepat' as ActiveTab, label: 'Acara Cepat', icon: <Zap className="w-4 h-4" /> }
+        ]
+      : []),
     { id: 'koreksi', label: 'Koreksi', icon: <GitPullRequestDraft className="w-4 h-4" /> },
     { id: 'jadwal_sidang', label: 'Jadwal Sidang', icon: <Calendar className="w-4 h-4" /> },
     { id: 'putusan', label: 'Putusan', icon: <Gavel className="w-4 h-4" /> },

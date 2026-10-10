@@ -3,14 +3,27 @@
  * Sesuai Dokumen Perancangan LeAD-AP & Perbawaslu Nomor 8 Tahun 2022
  */
 
-export type UserRole =
-  | 'publik'
-  | 'petugas_registrasi'
-  | 'sekretaris'
-  | 'perisalah'
-  | 'asisten'
-  | 'majelis'
-  | 'admin';
+export type UserRole = 'publik' | 'admin';
+
+export interface GoogleDriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: string;
+  createdTime?: string;
+  webViewLink?: string;
+  webContentLink?: string;
+  thumbnailLink?: string;
+  perkara_id?: string;
+  kode_formulir?: string;
+}
+
+export interface AdminCredential {
+  username: string;
+  passwordHash: string; // Plain/simple hash for admin credential
+  fullName: string;
+  lastLogin?: string;
+}
 
 export type JalurPenyelesaian =
   | 'biasa'         // Jalur Pemeriksaan Biasa (Ps. 4-39)
@@ -143,6 +156,28 @@ export interface DokumenModel {
   berkas_url?: string;
 }
 
+export type KategoriBerkasPerkara = 
+  | 'permohonan_pelapor'
+  | 'jawaban_terlapor'
+  | 'daftar_alat_bukti'
+  | 'ba_sumpah'
+  | 'ba_pemeriksaan_sidang';
+
+export interface BerkasDokumenPerkara {
+  id: string;
+  perkara_id: string;
+  kategori: KategoriBerkasPerkara;
+  nama_kategori: string;
+  nama_file: string;
+  ukuran_bytes?: number;
+  ukuran_file?: string;
+  tipe_file: string; // 'application/pdf'
+  data_url: string; // base64 / blob URL
+  tgl_upload: string;
+  pengunggah: string;
+  keterangan?: string;
+}
+
 export interface PutusanPerkara {
   perkara_id: string;
   nomor_putusan: string;
@@ -217,6 +252,7 @@ export interface Perkara {
   alat_bukti: AlatBukti[];
   keterangan: KeteranganSaksiAhli[];
   dokumen: DokumenModel[];
+  berkas_dokumen?: BerkasDokumenPerkara[];
   putusan?: PutusanPerkara;
   koreksi?: PermintaanKoreksi;
   riwayat: RiwayatPerkara[];
@@ -248,4 +284,31 @@ export interface TaskItem {
   prioritas: 'Normal' | 'Penting' | 'Kritis';
   status_tugas: 'Menunggu' | 'Selesai';
   action_type: 'tetapkan_majelis' | 'siapkan_sps' | 'upload_ba_sp' | 'upload_risalah' | 'draf_putusan' | 'kirim_salinan' | 'buka_sidang' | 'koreksi';
+}
+
+export type FormulirAkses =
+  | 'Publik'
+  | 'Admin'
+  | 'Admin / Publik (untuk view putusan)'
+  | 'Admin / Publik (untuk view status)';
+
+export interface FormulirDraftFile {
+  namaFile: string;
+  ukuran?: string;
+  tipe?: string; // 'docx' | 'doc' | 'pdf' | 'txt'
+  tglUpload: string;
+  uploadedBy: string;
+  catatan?: string;
+  driveFileId?: string;
+  driveUrl?: string;
+  dataUrl?: string; // base64 data url for direct download
+}
+
+export interface FormulirMaster {
+  no: number;
+  kode: string;
+  perihal: string;
+  rujukan: string;
+  keterangan: FormulirAkses;
+  draftFile?: FormulirDraftFile;
 }

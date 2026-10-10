@@ -1,11 +1,25 @@
-import React, { useState } from 'react';
-import { X, CheckCircle2, AlertCircle, FilePlus2, ShieldCheck, ArrowRight, Save, Scale } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { 
+  X, 
+  CheckCircle2, 
+  AlertCircle, 
+  FilePlus2, 
+  ShieldCheck, 
+  ArrowRight, 
+  Save, 
+  Scale, 
+  HardDrive, 
+  Paperclip, 
+  Trash2, 
+  UploadCloud 
+} from 'lucide-react';
 import { 
   Perkara, 
   JalurPenyelesaian, 
   SumberPerkara, 
   KodeJenisPerkara, 
-  TingkatanBawaslu 
+  TingkatanBawaslu,
+  AlatBukti 
 } from '../types/leadAp';
 import { 
   generateNomorRegister, 
@@ -13,6 +27,12 @@ import {
   TAHAPAN_PEMILU_LIST, 
   tambahHariKerja 
 } from '../utils/businessLogic';
+import { 
+  getCachedAccessToken, 
+  uploadBuktiToDrive, 
+  uploadDokumenSidangToDrive,
+  TARGET_DRIVE_EMAIL 
+} from '../services/googleDriveService';
 
 interface RegistrasiPerkaraModalProps {
   onClose: () => void;
@@ -24,6 +44,7 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
   onSavePerkara
 }) => {
   const today = new Date().toISOString().split('T')[0];
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [sumber, setSumber] = useState<SumberPerkara>('LP');
@@ -59,6 +80,12 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
   const [pokokLaporan, setPokokLaporan] = useState<string>('');
   const [halDimohonkan, setHalDimohonkan] = useState<string>('');
 
+  // Attached files for Google Drive storage
+  const [attachedFiles, setAttachedFiles] = useState<
+    { id: string; file: File; uraian: string; bentuk: any }[]
+  >([]);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   // Mode Sidang (Pasal 35)
   const [modeSidang, setModeSidang] = useState<'Luring' | 'Daring'>('Luring');
   const [alasanDaring, setAlasanDaring] = useState<string>('');
@@ -73,7 +100,28 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
     tanggal: new Date()
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newItems: { id: string; file: File; uraian: string; bentuk: any }[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      newItems.push({
+        id: 'att-' + Date.now() + '-' + i,
+        file: f,
+        uraian: `Lampiran berkas laporan: ${f.name}`,
+        bentuk: f.type.includes('pdf') || f.name.endsWith('.pdf') ? 'Surat' : 'Dokumen Elektronik'
+      });
+    }
+    setAttachedFiles((prev) => [...prev, ...newItems]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setAttachedFiles((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!syaratFormal || !syaratMateriel) {
@@ -87,12 +135,60 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
+
     const tglReg = new Date();
     const tglBatas = tambahHariKerja(tglReg, 14);
     const batasStr = tglBatas.toISOString().split('T')[0];
 
+    const token = getCachedAccessToken();
+    const createdCaseId = 'perkara-' + Date.now();
+
+    // Buat initial alat bukti dari file-file yang diinput
+    const initialEvidence: AlatBukti[] = attachedFiles.map((att, idx) => ({
+      id: 'bukti-' + Date.now() + '-' + idx,
+      perkara_id: createdCaseId,
+      kode: `P-${idx + 1}`,
+      pengaju: 'Pelapor',
+      bentuk: att.bentuk,
+      asli_salinan: 'Asli',
+      uraian: att.uraian || att.file.name,
+      tgl_disahkan: today,
+      berkas_url: undefined
+    }));
+
+    // Upload files ke Google Drive penangananpelanggaranbanten@gmail.com jika token aktif
+    if (token) {
+      try {
+        for (let i = 0; i < attachedFiles.length; i++) {
+          const item = attachedFiles[i];
+          const uploaded = await uploadBuktiToDrive(
+            token,
+            previewNomorRegister,
+            `P-${i + 1}`,
+            item.file
+          );
+          if (uploaded?.webViewLink) {
+            initialEvidence[i].berkas_url = uploaded.webViewLink;
+          }
+        }
+
+        // Upload Dokumen Berita Acara Registrasi ke Google Drive
+        const baContent = `BERITA ACARA REGISTRASI LAPORAN/TEMUAN (ADM.BA-REG)\nNomor Register: ${previewNomorRegister}\nWilayah: ${selectedWilayah.nama}\nPelapor: ${namaPelapor}\nTerlapor: ${namaTerlapor}\nTanggal: ${today}\nPokok: ${pokokLaporan}\nPetitum: ${halDimohonkan}\n\nDisahkan untuk diproses dalam 14 Hari Kerja sesuai Perbawaslu No 8 Tahun 2022.`;
+        await uploadDokumenSidangToDrive(
+          token,
+          previewNomorRegister,
+          'ADM.BA-REG',
+          'Berita Acara Registrasi',
+          baContent
+        );
+      } catch (uploadErr) {
+        console.warn('Gagal upload lampiran ke Google Drive saat registrasi:', uploadErr);
+      }
+    }
+
     const newCase: Perkara = {
-      id: 'perkara-' + Date.now(),
+      id: createdCaseId,
       nomor_register: previewNomorRegister,
       jalur,
       sumber,
@@ -115,7 +211,7 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
       hal_dimohonkan: halDimohonkan,
       pelapor: {
         id: 'p-' + Date.now(),
-        perkara_id: 'perkara-' + Date.now(),
+        perkara_id: createdCaseId,
         peran: sumber === 'TM' ? 'Penemu' : 'Pelapor',
         jenis: jenisPelapor,
         nama: namaPelapor,
@@ -125,21 +221,21 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
       },
       terlapor: {
         id: 't-' + Date.now(),
-        perkara_id: 'perkara-' + Date.now(),
+        perkara_id: createdCaseId,
         peran: 'Terlapor',
         jenis: jenisTerlapor,
         nama: namaTerlapor
       },
       kuasa_pelapor: adaKuasa && namaKuasa ? {
         id: 'kp-' + Date.now(),
-        perkara_id: 'perkara-' + Date.now(),
+        perkara_id: createdCaseId,
         peran: 'Kuasa Pelapor',
         jenis: 'Perorangan',
         nama: namaKuasa,
         dasar_kuasa: 'Surat Kuasa Khusus terverifikasi'
       } : undefined,
       penetapan: {
-        perkara_id: 'perkara-' + Date.now(),
+        perkara_id: createdCaseId,
         nomor_keputusan: `0${Math.floor(Math.random()*90)+10}/KEP/${tingkatan}/${today.split('-')[0]}`,
         tanggal_keputusan: today,
         ketua_majelis: 'Drs. H. Didih M. Sudi, M.Si',
@@ -149,12 +245,12 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
         perisalah: 'Siti Rohmah, S.I.Kom'
       },
       jadwal_sidang: [],
-      alat_bukti: [],
+      alat_bukti: initialEvidence,
       keterangan: [],
       dokumen: [
         {
           id: 'dok-reg-' + Date.now(),
-          perkara_id: 'perkara-' + Date.now(),
+          perkara_id: createdCaseId,
           kode_formulir: 'ADM.BA-REG',
           nama_formulir: 'Berita Acara Registrasi',
           nomor: `00${Math.floor(Math.random()*80)+10}/BA-REG/ADM/${today.split('-')[0]}`,
@@ -166,10 +262,10 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
       riwayat: [
         {
           id: 'rw-reg-1',
-          perkara_id: 'perkara-' + Date.now(),
+          perkara_id: createdCaseId,
           waktu: `${today} 10:00 WIB`,
           tahapan: 'Registrasi',
-          proses: `Perkara dicatat di buku register; Nomor ADM.NRL ${previewNomorRegister} terbit; Berita Acara ADM.BA-REG disahkan. Timer 14 Hari Kerja dimulai.`,
+          proses: `Perkara dicatat di buku register; Nomor ADM.NRL ${previewNomorRegister} terbit; Berita Acara ADM.BA-REG disahkan. Terhubung ke Google Drive ${TARGET_DRIVE_EMAIL}. Timer 14 Hari Kerja dimulai.`,
           pengguna: 'Petugas Registrasi',
           peran: 'Petugas Registrasi',
           dokumen_nama: 'ADM.BA-REG'
@@ -177,6 +273,7 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
       ]
     };
 
+    setIsSubmitting(false);
     onSavePerkara(newCase);
     onClose();
   };
@@ -488,20 +585,91 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
             />
           </div>
 
+          {/* Section 6: Unggah Berkas & Bukti Masukan ke Google Drive */}
+          <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 space-y-2.5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div>
+                <span className="font-bold text-blue-950 block text-xs flex items-center gap-1.5">
+                  <HardDrive className="w-4 h-4 text-blue-700" />
+                  <span>Lampiran Dokumen & Alat Bukti Masukan (Google Drive)</span>
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Tersimpan langsung di Google Drive resmi: <strong className="text-blue-900 font-mono">{TARGET_DRIVE_EMAIL}</strong>
+                </p>
+              </div>
+
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAddAttachment}
+                  multiple
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs shadow-xs cursor-pointer"
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  <span>+ Pilih Berkas Lampiran</span>
+                </button>
+              </div>
+            </div>
+
+            {attachedFiles.length > 0 ? (
+              <div className="divide-y divide-blue-100 bg-white border border-blue-200 rounded-lg overflow-hidden">
+                {attachedFiles.map((item, idx) => (
+                  <div key={item.id} className="p-2.5 flex items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded text-[10px]">
+                        P-{idx + 1}
+                      </span>
+                      <div>
+                        <span className="font-bold text-slate-800 block text-xs">{item.file.name}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {(item.file.size / 1024).toFixed(1)} KB • {item.bentuk}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAttachment(item.id)}
+                      className="text-slate-400 hover:text-red-600 p-1 rounded cursor-pointer"
+                      title="Hapus lampiran"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-slate-500 italic">
+                Opsional: Lampirkan berkas bukti awal, identitas pelapor, atau salinan laporan tertulis untuk diunggah ke Google Drive.
+              </p>
+            )}
+          </div>
+
           <div className="p-4 bg-slate-100 border-t flex items-center justify-between">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-lg"
+              disabled={isSubmitting}
+              className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-lg cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md flex items-center gap-2 text-xs"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 bg-red-700 hover:bg-red-600 disabled:bg-slate-400 text-white font-bold rounded-lg shadow-md flex items-center gap-2 text-xs cursor-pointer"
             >
               <Save className="w-4 h-4" />
-              <span>Daftarkan & Terbitkan ADM.BA-REG (Mulai 14 HK)</span>
+              <span>
+                {isSubmitting
+                  ? 'Menyimpan & Menyambungkan ke Drive...'
+                  : 'Daftarkan & Terbitkan ADM.BA-REG (Mulai 14 HK)'}
+              </span>
             </button>
           </div>
         </form>
