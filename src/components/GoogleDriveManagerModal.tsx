@@ -22,7 +22,7 @@ import {
 import { 
   googleSignIn, 
   googleSignOut, 
-  getCachedAccessToken, 
+   
   getCachedUser,
   listBawasluDriveFiles, 
   syncDatabaseToGoogleDrive,
@@ -49,7 +49,7 @@ export const GoogleDriveManagerModal: React.FC<GoogleDriveManagerModalProps> = (
   tasks = [],
   onNotify
 }) => {
-  const [token, setToken] = useState<string | null>(getCachedAccessToken());
+  const [token, setToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(() => getCachedUser()?.email || null);
   const [files, setFiles] = useState<GoogleDriveFile[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -65,7 +65,7 @@ export const GoogleDriveManagerModal: React.FC<GoogleDriveManagerModalProps> = (
 
   useEffect(() => {
     if (isOpen) {
-      const current = getCachedAccessToken();
+      const current = null;
       const currentUser = getCachedUser();
       setToken(current);
       if (currentUser?.email) {

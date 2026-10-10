@@ -28,7 +28,7 @@ import {
   tambahHariKerja 
 } from '../utils/businessLogic';
 import { 
-  getCachedAccessToken, 
+   
   uploadBuktiToDrive, 
   uploadDokumenSidangToDrive,
   TARGET_DRIVE_EMAIL 
@@ -141,7 +141,7 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
     const tglBatas = tambahHariKerja(tglReg, 14);
     const batasStr = tglBatas.toISOString().split('T')[0];
 
-    const token = getCachedAccessToken();
+    const token = null;
     const createdCaseId = 'perkara-' + Date.now();
 
     // Buat initial alat bukti dari file-file yang diinput

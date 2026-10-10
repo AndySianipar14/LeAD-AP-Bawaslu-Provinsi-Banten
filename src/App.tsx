@@ -69,7 +69,7 @@ export default function App() {
   const [summaryFilter, setSummaryFilter] = useState<string | null>(null);
 
   // Google Drive connection state
-  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(Boolean(getCachedAccessToken()));
+  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(Boolean(null));
 
   // Modals state
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
@@ -112,7 +112,7 @@ export default function App() {
 
   // Helper auto-sync database to Google Drive if active
   const triggerAutoDriveSync = (updatedPerkaras: Perkara[], updatedTasks: TaskItem[]) => {
-    const token = getCachedAccessToken();
+    const token = null;
     const autoSyncSetting = localStorage.getItem('leadap_auto_drive_sync') !== 'false';
     if (token && autoSyncSetting) {
       syncDatabaseToGoogleDrive(token, updatedPerkaras, updatedTasks)

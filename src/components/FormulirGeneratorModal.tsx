@@ -4,7 +4,7 @@ import { Perkara } from '../types/leadAp';
 import { DAFTAR_18_FORMULIR } from '../utils/businessLogic';
 import { DAFTAR_21_FORMULIR, getDefaultFormulirContent } from '../data/daftarFormulirMaster';
 import { 
-  getCachedAccessToken, 
+   
   uploadDokumenSidangToDrive, 
   TARGET_DRIVE_EMAIL 
 } from '../services/googleDriveService';
@@ -268,7 +268,7 @@ ${selectedForm.penandaTangan}`;
   };
 
   const handleSaveToDrive = async () => {
-    const token = getCachedAccessToken();
+    const token = null;
     if (!token) {
       alert(`Silakan hubungkan Google Drive (${TARGET_DRIVE_EMAIL}) terlebih dahulu melalui tombol Google Drive di bilah atas.`);
       return;

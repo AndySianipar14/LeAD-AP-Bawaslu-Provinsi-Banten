@@ -27,7 +27,7 @@ import {
 import { FormulirMaster, UserRole, FormulirDraftFile } from '../types/leadAp';
 import { DAFTAR_21_FORMULIR, getDefaultFormulirContent } from '../data/daftarFormulirMaster';
 import { 
-  getCachedAccessToken, 
+   
   uploadDraftFormulirToDrive, 
   TARGET_DRIVE_EMAIL 
 } from '../services/googleDriveService';
@@ -171,7 +171,7 @@ export const UnduhFormulirView: React.FC<UnduhFormulirViewProps> = ({
 
   // Helper Simpan & Buka di Google Drive / Docs
   const handleExportPreviewToDrive = async (item: FormulirMaster) => {
-    const token = getCachedAccessToken();
+    const token = null;
     if (!token) {
       handleOpenGoogleDocs(item);
       return;

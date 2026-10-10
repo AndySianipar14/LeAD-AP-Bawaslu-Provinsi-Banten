@@ -20,7 +20,7 @@ import {
 import { DEFAULT_HARI_LIBUR, KODE_WILAYAH_BAWASLU } from '../utils/businessLogic';
 import { HariLibur } from '../types/leadAp';
 import { 
-  getCachedAccessToken, 
+   
   getCachedUser, 
   TARGET_DRIVE_EMAIL 
 } from '../services/googleDriveService';
@@ -440,7 +440,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({ onOpenDriveManag
 
               {onOpenDriveManager && (
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-slate-600">Status Akun: {getCachedAccessToken() ? 'Terhubung' : 'Siap Dihubungkan'}</span>
+                  <span className="text-slate-600">Status Akun: {null ? 'Terhubung' : 'Siap Dihubungkan'}</span>
                   <button
                     onClick={onOpenDriveManager}
                     className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs shadow-xs cursor-pointer"
