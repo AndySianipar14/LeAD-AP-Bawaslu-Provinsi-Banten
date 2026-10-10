@@ -131,11 +131,11 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right: Quick Action Buttons (Exclusively for Admin) */}
         {isAdmin && (
           <div className="flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end">
-            {/* Acara Cepat button (Pasal 40-43, instant 1-screen mobile form) */}
+            {/* Acara Cepat button (instant 1-screen mobile form) */}
             <button
               onClick={onOpenAcaraCepatModal}
               className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs px-3 py-2 rounded-lg shadow-md hover:shadow-amber-500/20 transition-all"
-              title="Formulir satu layar pemeriksaan acara cepat di lapangan (Pasal 40-43)"
+              title="Formulir satu layar pemeriksaan acara cepat di lapangan"
             >
               <Zap className="w-3.5 h-3.5" />
               <span>+ Acara Cepat</span>

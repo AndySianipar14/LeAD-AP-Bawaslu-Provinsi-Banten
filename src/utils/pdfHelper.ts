@@ -16,7 +16,7 @@ export const KATEGORI_BERKAS_LIST: KategoriBerkasMeta[] = [
     nama: 'Permohonan Pelapor',
     singkatan: 'Permohonan',
     kode: 'DOK.PERMOHONAN',
-    deskripsi: 'Naskah permohonan atau laporan resmi yang diajukan oleh Pelapor, memuat identitas para pihak, uraian kronologis peristiwa dugaan pelanggaran, dan hal yang dimohonkan/petitum (Pasal 13-17 Perbawaslu 8/2022).',
+    deskripsi: 'Naskah permohonan atau laporan resmi yang diajukan oleh Pelapor, memuat identitas para pihak, uraian kronologis peristiwa dugaan pelanggaran, dan hal yang dimohonkan/petitum.',
     wajib: true,
     pengunggahDefault: 'Pelapor / Kuasa Hukum'
   },
@@ -25,7 +25,7 @@ export const KATEGORI_BERKAS_LIST: KategoriBerkasMeta[] = [
     nama: 'Jawaban Terlapor',
     singkatan: 'Jawaban',
     kode: 'DOK.JAWABAN',
-    deskripsi: 'Jawaban tertulis, sanggahan, tanggapan, atau eksepsi dari Terlapor terhadap materi temuan atau laporan Pelapor yang diserahkan dalam persidangan (Pasal 27 Perbawaslu 8/2022).',
+    deskripsi: 'Jawaban tertulis, sanggahan, tanggapan, atau eksepsi dari Terlapor terhadap materi temuan atau laporan Pelapor yang diserahkan dalam persidangan.',
     wajib: true,
     pengunggahDefault: 'Terlapor / Kuasa Hukum'
   },
@@ -34,7 +34,7 @@ export const KATEGORI_BERKAS_LIST: KategoriBerkasMeta[] = [
     nama: 'Daftar Alat Bukti',
     singkatan: 'Alat Bukti',
     kode: 'DOK.ALAT_BUKTI',
-    deskripsi: 'Daftar rincian dan matriks alat bukti surat/tulisan (P-1 s.d P-n / T-1 s.d T-n), dokumen elektronik, rekaman, petunjuk, serta saksi yang diserahkan kepada Majelis Pemeriksa (Pasal 28-30 Perbawaslu 8/2022).',
+    deskripsi: 'Daftar rincian dan matriks alat bukti surat/tulisan (P-1 s.d P-n / T-1 s.d T-n), dokumen elektronik, rekaman, petunjuk, serta saksi yang diserahkan kepada Majelis Pemeriksa.',
     wajib: true,
     pengunggahDefault: 'Para Pihak / Panitera'
   },
@@ -43,7 +43,7 @@ export const KATEGORI_BERKAS_LIST: KategoriBerkasMeta[] = [
     nama: 'Berita Acara Sumpah Saksi/Ahli',
     singkatan: 'BA Sumpah',
     kode: 'ADM.BA-SUMPAH',
-    deskripsi: 'Naskah berita acara resmi pengambilan sumpah atau janji saksi dan ahli di hadapan Majelis Pemeriksa sebelum memberikan keterangan dalam sidang terbuka (Pasal 31 Perbawaslu 8/2022).',
+    deskripsi: 'Naskah berita acara resmi pengambilan sumpah atau janji saksi dan ahli di hadapan Majelis Pemeriksa sebelum memberikan keterangan dalam sidang terbuka.',
     wajib: false,
     pengunggahDefault: 'Sekretaris Pemeriksa'
   },
@@ -52,7 +52,7 @@ export const KATEGORI_BERKAS_LIST: KategoriBerkasMeta[] = [
     nama: 'Berita Acara Pemeriksaan Sidang',
     singkatan: 'BA Sidang',
     kode: 'ADM.BA-SIDANG',
-    deskripsi: 'Berita acara jalannya sidang pemeriksaan terbuka mulai dari pembacaan laporan, jawaban, pembuktian, kesimpulan, hingga sebelum pembacaan putusan (Pasal 24-34 Perbawaslu 8/2022).',
+    deskripsi: 'Berita acara jalannya sidang pemeriksaan terbuka mulai dari pembacaan laporan, jawaban, pembuktian, kesimpulan, hingga sebelum pembacaan putusan.',
     wajib: true,
     pengunggahDefault: 'Perisalah / Panitera Sidang'
   }
@@ -99,7 +99,7 @@ e-Administrasi (Sidang) Administratif Pemilu (LeAD-AP)
 Bawaslu Provinsi Banten.
 
 CATATAN RESMI MAJELIS / PANITERA:
-1. Berkas diverifikasi keabsahannya sesuai Pasal 24-34 Perbawaslu 8/2022.
+1. Berkas diverifikasi keabsahannya oleh Panitera Sidang.
 2. Naskah sah disimpan dalam repositori digital perkara ${nomorRegister}.
 3. Dokumen dapat dicetak dan diunduh dalam format PDF resmi.
 

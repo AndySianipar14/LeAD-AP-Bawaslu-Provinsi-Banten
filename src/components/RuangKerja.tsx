@@ -59,7 +59,7 @@ export const RuangKerja: React.FC<RuangKerjaProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-300 mt-1">
-              Manajemen antrian disposisi tugas per peran (Pasal 13–16), pengingat tenggat waktu, dan pembuatan formulir resmi otomatis.
+              Manajemen antrian disposisi tugas per peran, pengingat tenggat waktu, dan pembuatan formulir resmi otomatis.
             </p>
           </div>
 

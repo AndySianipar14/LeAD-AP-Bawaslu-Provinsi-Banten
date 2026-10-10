@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   FileText, 
@@ -18,11 +18,15 @@ import {
   Clock, 
   Plus, 
   Edit3, 
-  Trash2
+  Trash2,
+  Youtube,
+  Radio
 } from 'lucide-react';
 import { Perkara, UserRole, JadwalSidang, AlatBukti, KeteranganSaksiAhli } from '../types/leadAp';
 import { STATUS_PERKARA_MAP, getStatusTenggatHK } from '../utils/businessLogic';
 import { BerkasDokumenSection } from './BerkasDokumenSection';
+import { EditJadwalSidangModal } from './EditJadwalSidangModal';
+import { YouTubeStreamModal } from './YouTubeStreamModal';
 
 interface PerkaraDetailProps {
   perkara: Perkara;
@@ -49,9 +53,16 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
   onOpenEditPerkara,
   onOpenDriveManager
 }) => {
+  const isAdmin = currentRole === 'admin';
   const [activeTab, setActiveTab] = useState<
     'data_umum' | 'penetapan' | 'jadwal_sidang' | 'alat_bukti' | 'saksi_ahli' | 'putusan' | 'koreksi' | 'riwayat' | 'berkas_drive'
   >('data_umum');
+
+  useEffect(() => {
+    if (!isAdmin && activeTab === 'berkas_drive') {
+      setActiveTab('data_umum');
+    }
+  }, [isAdmin, activeTab]);
 
   const statusMeta = STATUS_PERKARA_MAP[perkara.status] || {
     kode: perkara.status,
@@ -73,6 +84,10 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
   const [newJadwalAgenda, setNewJadwalAgenda] = useState<string>('');
   const [newJadwalTgl, setNewJadwalTgl] = useState<string>(new Date().toISOString().split('T')[0]);
   const [newJadwalJam, setNewJadwalJam] = useState<string>('09:00 WIB');
+
+  // State untuk modal edit jadwal sidang dan pemutar siaran YouTube
+  const [editingJadwal, setEditingJadwal] = useState<JadwalSidang | null>(null);
+  const [activeStreamJadwal, setActiveStreamJadwal] = useState<JadwalSidang | null>(null);
 
   // Evaluasi kecukupan bukti sah (Pasal 36 ayat 2)
   const buktiSahCount = (perkara.alat_bukti || []).filter((b) => Boolean(b.tgl_disahkan)).length;
@@ -153,6 +168,27 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
     }
   };
 
+  const handleSaveEditedJadwal = (updatedSidang: JadwalSidang) => {
+    const updatedJadwalList = (perkara.jadwal_sidang || []).map((j) =>
+      j.id === updatedSidang.id ? updatedSidang : j
+    );
+    const newRiwayat = {
+      id: 'rw-' + Date.now(),
+      perkara_id: perkara.id,
+      waktu: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      tahapan: 'Jadwal Sidang',
+      proses: `Pembaruan jadwal sidang ke-${updatedSidang.ke} (${updatedSidang.agenda}): Status ${updatedSidang.status}${updatedSidang.alasan_ditunda ? ` [Alasan: ${updatedSidang.alasan_ditunda}]` : ''}${updatedSidang.tautan_siaran ? ' [Tautan Siaran YouTube Terpasang]' : ''}`,
+      pengguna: 'Administrator',
+      peran: 'Admin Bawaslu'
+    };
+    const updated = {
+      ...perkara,
+      jadwal_sidang: updatedJadwalList,
+      riwayat: [newRiwayat, ...(perkara.riwayat || [])]
+    };
+    onUpdatePerkara(updated);
+  };
+
   return (
     <div className="space-y-4">
       {/* Top Navigation Bar & Action Row */}
@@ -183,7 +219,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
             <button
               onClick={() => onOpenSidangSimulator(perkara)}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded-lg shadow-sm border border-red-800 cursor-pointer"
-              title="Simulator Persidangan Pemeriksaan Sesuai Panduan Sidang & Perbawaslu 8/2022"
+              title="Simulator Persidangan Pemeriksaan"
             >
               <Gavel className="w-3.5 h-3.5" />
               <span>Buka Ruang Sidang</span>
@@ -281,7 +317,9 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
             { id: 'putusan', label: 'Putusan', icon: <Gavel className="w-3.5 h-3.5" /> },
             { id: 'koreksi', label: 'Koreksi', icon: <GitPullRequestDraft className="w-3.5 h-3.5" />, highlight: Boolean(perkara.koreksi) },
             { id: 'riwayat', label: 'Riwayat Perkara', icon: <History className="w-3.5 h-3.5" /> },
-            { id: 'berkas_drive', label: 'Berkas Dokumen', icon: <FileText className="w-3.5 h-3.5" /> }
+            ...(isAdmin
+              ? [{ id: 'berkas_drive', label: 'Berkas Dokumen', icon: <FileText className="w-3.5 h-3.5" /> }]
+              : [])
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -356,7 +394,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                       </span>
                       {perkara.alasan_daring && (
                         <p className="text-[11px] text-slate-500 mt-1 italic">
-                          Alasan: {perkara.alasan_daring} (Pasal 35)
+                          Alasan: {perkara.alasan_daring}
                         </p>
                       )}
                     </td>
@@ -464,7 +502,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                 <div className="p-4 bg-amber-50/60 rounded-xl border border-amber-200 space-y-3">
                   <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2">
                     <Gavel className="w-4 h-4 text-amber-800" />
-                    <span>Susunan Majelis Pemeriksa (Pasal 13 & 17)</span>
+                    <span>Susunan Majelis Pemeriksa</span>
                   </h4>
                   <div className="text-xs space-y-2">
                     <div>
@@ -489,7 +527,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                     <Users className="w-4 h-4 text-slate-700" />
-                    <span>Tim Pendukung Sidang (Pasal 14–16)</span>
+                    <span>Tim Pendukung Sidang</span>
                   </h4>
                   <div className="text-xs space-y-2.5">
                     <div>
@@ -539,7 +577,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                   <span>Jadwal Persidangan Terbuka</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Tata Urutan: Pembacaan → Jawaban → Pembuktian → Kesimpulan → Putusan (Pasal 17 ayat 2)
+                  Tata Urutan: Pembacaan → Jawaban → Pembuktian → Kesimpulan → Putusan
                 </p>
               </div>
 
@@ -635,43 +673,87 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                           <span className="text-[10px] text-slate-500 font-mono">Mode: {sidang.mode}</span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                            sidang.status === 'Terlaksana'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : sidang.status === 'Ditunda'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {sidang.status}
-                          </span>
+                          {sidang.status === 'Sedang Berlangsung' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-600 text-white shadow-xs animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              <span>Live Sidang</span>
+                            </span>
+                          ) : sidang.status === 'Ditunda' ? (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                              Ditunda
+                            </span>
+                          ) : sidang.status === 'Terlaksana' ? (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                              Terlaksana
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                              Terjadwal
+                            </span>
+                          )}
                         </td>
-                        <td className="py-2.5 px-3 text-slate-600 text-[11px]">
-                          {sidang.alasan_ditunda || sidang.catatan_sidang || '—'}
+                        <td className="py-2.5 px-3 text-[11px]">
+                          {sidang.status === 'Ditunda' && sidang.alasan_ditunda ? (
+                            <div className="bg-amber-50/90 border border-amber-300 rounded-lg p-2 text-amber-900 space-y-0.5">
+                              <div className="flex items-center gap-1 font-bold text-[10px] text-amber-800 uppercase tracking-wide">
+                                <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />
+                                <span>Alasan Penundaan:</span>
+                              </div>
+                              <p className="font-medium text-slate-800 leading-tight">
+                                {sidang.alasan_ditunda}
+                              </p>
+                              {sidang.catatan_sidang && (
+                                <p className="text-[10px] text-slate-500 italic pt-0.5 border-t border-amber-200">
+                                  Catatan: {sidang.catatan_sidang}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-slate-600">
+                              {sidang.catatan_sidang || '—'}
+                            </div>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 text-center">
                           {sidang.tautan_siaran ? (
-                            <a
-                              href={sidang.tautan_siaran}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded border border-red-200"
+                            <button
+                              onClick={() => setActiveStreamJadwal(sidang)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-red-600 hover:bg-red-500 px-2.5 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
+                              title="Tonton Siaran Langsung YouTube Sidang Terbuka"
                             >
-                              <ExternalLink className="w-3 h-3" />
+                              <Youtube className="w-3.5 h-3.5" />
                               <span>Live Stream</span>
-                            </a>
+                            </button>
+                          ) : isInternal ? (
+                            <button
+                              onClick={() => setEditingJadwal(sidang)}
+                              className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                              title="Cantumkan tautan siaran YouTube"
+                            >
+                              + Tautkan Live
+                            </button>
                           ) : (
                             <span className="text-slate-400 text-[11px]">—</span>
                           )}
                         </td>
                         {isInternal && (
                           <td className="py-2.5 px-3 text-center">
-                            <button
-                              onClick={() => handleAdminDeleteJadwal(sidang.id)}
-                              className="p-1 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
-                              title="Hapus Jadwal Sidang (Admin)"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => setEditingJadwal(sidang)}
+                                className="p-1.5 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Agenda, Status, Alasan & Siaran Sidang"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleAdminDeleteJadwal(sidang.id)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Hapus Jadwal Sidang (Admin)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         )}
                       </tr>
@@ -699,7 +781,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                   <span>Daftar Alat Bukti (P-n dan T-n)</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Pengesahan bukti dengan verifikasi checklist asli/salinan & ketuk palu Majelis 1x (Pasal 23–30)
+                  Pengesahan bukti dengan verifikasi checklist asli/salinan & penegasan Majelis
                 </p>
               </div>
 
@@ -861,7 +943,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                   <span>Keterangan Saksi, Ahli, dan Pihak/Lembaga Terkait</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Saksi dan Ahli wajib disumpah terlebih dahulu (Formulir ADM.BA-SUMPAH, Pasal 31)
+                  Saksi dan Ahli wajib disumpah terlebih dahulu (Formulir ADM.BA-SUMPAH)
                 </p>
               </div>
             </div>
@@ -967,7 +1049,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                   {perkara.putusan.sanksi && perkara.putusan.sanksi.length > 0 && (
                     <div>
                       <span className="text-xs font-bold text-slate-700 block mb-1">
-                        SANKSI YANG DIJATUHKAN (Pasal 37 ayat 2):
+                        SANKSI YANG DIJATUHKAN:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {perkara.putusan.sanksi.map((s, i) => (
@@ -981,7 +1063,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
 
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs text-slate-600">
                     <div className="flex items-center gap-3">
-                      <span>Salinan Para Pihak: {perkara.putusan.tgl_salinan || '≤ 1 HK (Pasal 38)'}</span>
+                      <span>Salinan Para Pihak: {perkara.putusan.tgl_salinan || '≤ 1 HK'}</span>
                       <span>Publikasi Laman: {perkara.putusan.tgl_publikasi || 'ADM.STATUS Resmi'}</span>
                     </div>
 
@@ -995,13 +1077,13 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                   </div>
                 </div>
 
-                {/* Masa Permintaan Koreksi (Pasal 45) */}
+                {/* Masa Permintaan Koreksi */}
                 {perkara.tingkatan !== 'BWSL' && perkara.jalur !== 'acara_cepat' && (
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-blue-950 uppercase tracking-wide flex items-center gap-1.5">
                         <GitPullRequestDraft className="w-4 h-4 text-blue-700" />
-                        <span>Masa Permintaan Koreksi ke Bawaslu RI (Pasal 45)</span>
+                        <span>Masa Permintaan Koreksi ke Bawaslu RI</span>
                       </span>
                       <span className="text-xs font-mono font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded">
                         Tenggat: ≤ 3 Hari Kerja
@@ -1041,17 +1123,17 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
             <div className="flex items-center justify-between border-b pb-2">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
                 <GitPullRequestDraft className="w-4 h-4 text-amber-700" />
-                <span>Alur Permintaan Koreksi di Bawaslu RI (Pasal 44–54)</span>
+                <span>Alur Permintaan Koreksi di Bawaslu RI</span>
               </h3>
             </div>
 
             {perkara.koreksi ? (
               <div className="space-y-4">
-                {/* Penanda Penundaan Eksekusi (Pasal 54) */}
+                {/* Penanda Penundaan Eksekusi */}
                 <div className="p-3 bg-red-100 border border-red-300 rounded-xl flex items-center gap-2.5 text-red-900 font-bold text-xs">
                   <AlertCircle className="w-5 h-5 text-red-700 shrink-0" />
                   <span>
-                    PERHATIAN (PASAL 54): Pelaksanaan putusan Bawaslu Provinsi/Kabupaten/Kota DITUNDA selama proses koreksi berjalan di Bawaslu RI.
+                    PERHATIAN: Pelaksanaan putusan Bawaslu Provinsi/Kabupaten/Kota DITUNDA selama proses koreksi berjalan di Bawaslu RI.
                   </span>
                 </div>
 
@@ -1071,7 +1153,7 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
                     </div>
                     <div>
                       <span className="text-slate-500 block font-semibold">Tenggat Putusan Koreksi:</span>
-                      <span className="font-mono text-slate-900">≤ 7 Hari Kerja sejak registrasi (Pasal 51)</span>
+                      <span className="font-mono text-slate-900">≤ 7 Hari Kerja sejak registrasi</span>
                     </div>
                   </div>
 
@@ -1167,8 +1249,8 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
           </div>
         )}
 
-        {/* Tab 8: Berkas Dokumen (List Upload PDF: Permohonan Pelapor, Jawaban Terlapor, Daftar Alat Bukti, BA Sumpah Saksi/Ahli, BA Pemeriksaan Sidang) */}
-        {activeTab === 'berkas_drive' && (
+        {/* Tab 8: Berkas Dokumen (Khusus Admin) */}
+        {isAdmin && activeTab === 'berkas_drive' && (
           <BerkasDokumenSection
             perkara={perkara}
             currentRole={currentRole}
@@ -1176,6 +1258,23 @@ export const PerkaraDetail: React.FC<PerkaraDetailProps> = ({
           />
         )}
       </div>
+
+      {/* Modal Edit Agenda & Jadwal Sidang (Admin) */}
+      <EditJadwalSidangModal
+        isOpen={Boolean(editingJadwal)}
+        onClose={() => setEditingJadwal(null)}
+        sidang={editingJadwal}
+        perkara={perkara}
+        onSave={handleSaveEditedJadwal}
+      />
+
+      {/* Modal Pemutar Siaran Langsung YouTube Sidang Terbuka */}
+      <YouTubeStreamModal
+        isOpen={Boolean(activeStreamJadwal)}
+        onClose={() => setActiveStreamJadwal(null)}
+        sidang={activeStreamJadwal}
+        perkara={perkara}
+      />
     </div>
   );
 };

@@ -125,13 +125,13 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
     e.preventDefault();
 
     if (!syaratFormal || !syaratMateriel) {
-      alert('Peringatan: Registrasi hanya dapat dilakukan bila syarat formal dan materiel terpenuhi (Pasal 10 Perbawaslu 8/2022).');
+      alert('Peringatan: Registrasi hanya dapat dilakukan bila syarat formal dan materiel terpenuhi.');
       return;
     }
 
-    // Pasal 12 logic
+    // Pasca penetapan check
     if (flagPascaPenetapan && flagPHPU) {
-      alert('Peringatan (Pasal 12): Terdapat permohonan PHPU di Mahkamah Konstitusi. Laporan/Temuan tidak diregistrasi sebagai perkara biasa di Bawaslu, melainkan disampaikan sebagai keterangan tertulis kepada MK.');
+      alert('Peringatan: Terdapat permohonan PHPU di Mahkamah Konstitusi. Laporan/Temuan tidak diregistrasi sebagai perkara biasa di Bawaslu, melainkan disampaikan sebagai keterangan tertulis kepada MK.');
       return;
     }
 
@@ -292,7 +292,7 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
                 <span>REGISTRASI PERKARA PELANGGARAN ADMINISTRATIF</span>
               </h2>
               <p className="text-xs text-slate-300 font-mono mt-0.5">
-                Penerbitan Nomor ADM.NRL & Berita Acara ADM.BA-REG (Pasal 10)
+                Penerbitan Nomor ADM.NRL & Berita Acara ADM.BA-REG
               </p>
             </div>
           </div>
@@ -406,10 +406,10 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
             </select>
           </div>
 
-          {/* Section 2: Syarat Formal & Materiel (Pasal 10) */}
+          {/* Section 2: Syarat Formal & Materiel */}
           <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
             <span className="font-bold text-slate-800 block text-xs uppercase tracking-wide">
-              Verifikasi Syarat Pendaftaran (Pasal 10 Perbawaslu 8/2022):
+              Verifikasi Syarat Pendaftaran (Syarat Formal & Materiel):
             </span>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
@@ -434,10 +434,10 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
             </div>
           </div>
 
-          {/* Section 3: Skenario Pasal 12 (Pasca Hasil Nasional) */}
+          {/* Section 3: Skenario Pasca Penetapan Hasil Nasional */}
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
             <span className="font-bold text-amber-950 block text-xs uppercase tracking-wide">
-              Pengecekan Pasal 12 (Pasca Penetapan Hasil Perolehan Suara Nasional):
+              Pengecekan Pasca Penetapan Hasil Perolehan Suara Nasional:
             </span>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer text-slate-800">
@@ -533,7 +533,7 @@ export const RegistrasiPerkaraModal: React.FC<RegistrasiPerkaraModalProps> = ({
               </div>
               <div>
                 <label className="text-slate-600 block mb-1">
-                  Jenis Terlapor {jalur === 'tsm' ? '(Pasal 59: Calon/Paslon Sahaja)' : '(Pasal 8)'}:
+                  Jenis Terlapor {jalur === 'tsm' ? '(Khusus Calon / Pasangan Calon)' : ''}:
                 </label>
                 <select
                   value={jenisTerlapor}

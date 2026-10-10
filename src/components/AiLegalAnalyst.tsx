@@ -31,7 +31,7 @@ export const AiLegalAnalyst: React.FC<AiLegalAnalystProps> = ({
   const currentCase = perkaraList.find((p) => p.id === activeCaseId) || perkaraList[0];
 
   const [analysisType, setAnalysisType] = useState<string>(
-    'TELAAH YURIDIS LENGKAP & UJI 2 ALAT BUKTI SAH (PASAL 36 AYAT 2)'
+    'TELAAH YURIDIS LENGKAP & UJI 2 ALAT BUKTI SAH'
   );
   const [customQuery, setCustomQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,20 +41,20 @@ export const AiLegalAnalyst: React.FC<AiLegalAnalystProps> = ({
 
   const presets = [
     {
-      title: 'Uji Kecukupan Minimal 2 Alat Bukti Sah (Pasal 36 ayat 2)',
-      query: 'Lakukan pengujian yuridis terhadap alat bukti yang telah disahkan. Apakah telah memenuhi batas minimal 2 alat bukti sah menurut Pasal 36 ayat (2) Perbawaslu 8/2022? Analisis kekuatan pembuktian bukti surat vs keterangan saksi.'
+      title: 'Uji Kecukupan Minimal 2 Alat Bukti Sah',
+      query: 'Lakukan pengujian yuridis terhadap alat bukti yang telah disahkan. Apakah telah memenuhi batas minimal 2 alat bukti sah? Analisis kekuatan pembuktian bukti surat vs keterangan saksi.'
     },
     {
       title: 'Analisis Ratio Decidendi & Rekomendasi Amar Putusan',
-      query: 'Rumuskan pertimbangan hukum (Ratio Decidendi) mendalam mengenai keterbuktian unsur pelanggaran tata cara/prosedur administratif Pemilu (Pasal 460 UU 7/2017) beserta rekomendasi amar putusan dan jenis sanksi Pasal 37 ayat (2).'
+      query: 'Rumuskan pertimbangan hukum (Ratio Decidendi) mendalam mengenai keterbuktian unsur pelanggaran tata cara/prosedur administratif Pemilu beserta rekomendasi amar putusan dan jenis sanksi administratif.'
     },
     {
       title: 'Uji Unsur Pelanggaran TSM (Terstruktur, Sistematis, Masif)',
-      query: 'Khusus perkara TSM: Uji keterpenuhan unsur Terstruktur (keterlibatan aparat berjenjang), Sistematis (perencanaan matang), dan Masif (dampak luas lintas wilayah) sesuai Pasal 55-71 Perbawaslu 8/2022.'
+      query: 'Khusus perkara TSM: Uji keterpenuhan unsur Terstruktur (keterlibatan aparat berjenjang), Sistematis (perencanaan matang), dan Masif (dampak luas lintas wilayah).'
     },
     {
-      title: 'Analisis Koreksi: Kesalahan Penerapan Hukum (Pasal 44)',
-      query: 'Telaah permohonan koreksi: Apakah terdapat kekeliruan penerapan norma hukum substantif atau hukum acara oleh Bawaslu Provinsi/Kab/Kota yang memenuhi syarat untuk dikoreksi Bawaslu RI (Pasal 44-54)?'
+      title: 'Analisis Koreksi: Kesalahan Penerapan Hukum',
+      query: 'Telaah permohonan koreksi: Apakah terdapat kekeliruan penerapan norma hukum substantif atau hukum acara oleh Bawaslu Provinsi/Kab/Kota yang memenuhi syarat untuk dikoreksi Bawaslu RI?'
     }
   ];
 
@@ -101,9 +101,9 @@ export const AiLegalAnalyst: React.FC<AiLegalAnalystProps> = ({
 
 ---
 
-#### I. PENALARAN YURIDIS TERHADAP KECUKUPAN ALAT BUKTI (PASAL 36 AYAT 2)
+#### I. PENALARAN YURIDIS TERHADAP KECUKUPAN ALAT BUKTI
 1. **Ketentuan Hukum Formil:**
-   Berdasarkan Pasal 36 ayat (2) Peraturan Bawaslu Nomor 8 Tahun 2022:
+   Berdasarkan ketentuan hukum pembuktian sidang administratif:
    *"Putusan Bawaslu didasarkan pada sekurang-kurangnya 2 (dua) alat bukti yang sah dan keyakinan Majelis Pemeriksa."*
 2. **Kondisi Faktual Alat Bukti:**
    - Jumlah alat bukti terdaftar: **${currentCase?.alat_bukti?.length || 0} bukti**.
@@ -116,9 +116,9 @@ export const AiLegalAnalyst: React.FC<AiLegalAnalystProps> = ({
 
 ---
 
-#### II. PENGUJIAN UNSUR PELANGGARAN ADMINISTRATIF (PASAL 460 UU NO. 7 TAHUN 2017)
+#### II. PENGUJIAN UNSUR PELANGGARAN ADMINISTRATIF
 - **Unsur 1: Subjek Hukum (Pelapor & Terlapor)**
-  Pelapor memiliki *legal standing* yang sah sesuai Pasal 7 Perbawaslu 8/2022. Pihak Terlapor (${currentCase?.terlapor?.nama}) merupakan subjek yang sah diperiksa dalam yurisdiksi administratif Bawaslu berdasarkan Pasal 8.
+  Pelapor memiliki *legal standing* yang sah. Pihak Terlapor (${currentCase?.terlapor?.nama}) merupakan subjek yang sah diperiksa dalam yurisdiksi administratif Bawaslu.
 - **Unsur 2: Pelanggaran Tata Cara, Prosedur, atau Mekanisme**
   Fakta pemeriksaan menunjukkan bahwa Terlapor telah melakukan tindakan yang menyimpang dari tata urutan teknis peraturan perundang-undangan pada tahapan ${currentCase?.tahapan_pemilu}.
 - **Unsur 3: Ketiadaan Alasan Pembenar**
@@ -132,11 +132,11 @@ Oleh karenanya, dalil Pelapor patut untuk dikabulkan untuk sebagian/seluruhnya.
 
 ---
 
-#### IV. REKOMENDASI AMAR PUTUSAN (PASAL 37 AYAT 2)
+#### IV. REKOMENDASI AMAR PUTUSAN
 1. **Menyatakan** Terlapor terbukti secara sah dan meyakinkan melakukan pelanggaran administratif Pemilu.
 2. **Memberikan teguran tertulis** kepada Terlapor agar tidak mengulangi perbuatan serupa.
 3. **Memerintahkan** Terlapor untuk melakukan perbaikan tata cara administrasi dalam tenggat waktu paling lama 3 (tiga) hari kerja sejak putusan dibacakan.
-4. **Memerintahkan** Sekretariat Bawaslu untuk menyampaikan salinan putusan kepada para pihak dalam waktu ≤ 1 hari kerja (Pasal 38) dan mempublikasikannya melalui laman resmi (ADM.STATUS).`;
+4. **Memerintahkan** Sekretariat Bawaslu untuk menyampaikan salinan putusan kepada para pihak dalam waktu ≤ 1 hari kerja dan mempublikasikannya melalui laman resmi (ADM.STATUS).`;
 
       setAnalysisResult(fallbackText);
     } finally {

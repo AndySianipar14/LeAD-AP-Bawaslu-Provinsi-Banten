@@ -148,7 +148,7 @@ export const AcaraCepatModal: React.FC<AcaraCepatModalProps> = ({
                 <span>FORMULIR SATU LAYAR ACARA CEPAT (ADM.ACARA CEPAT)</span>
               </h2>
               <p className="text-xs font-semibold text-slate-900">
-                Pemeriksaan & Putusan Seketika di Tempat Kejadian (Pasal 40–43 Perbawaslu 8/2022)
+                Pemeriksaan & Putusan Seketika di Tempat Kejadian
               </p>
             </div>
           </div>
@@ -188,7 +188,7 @@ export const AcaraCepatModal: React.FC<AcaraCepatModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Tanggal & Waktu:</label>
               <input
                 type="text"
-                value={`${today} (Hari yang sama - Pasal 42)`}
+                value={`${today} (Hari yang sama)`}
                 disabled
                 className="w-full p-2 border rounded-lg bg-slate-100 font-mono font-bold text-slate-700"
               />
@@ -264,7 +264,7 @@ export const AcaraCepatModal: React.FC<AcaraCepatModalProps> = ({
           {/* Amar Putusan Acara Cepat */}
           <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
             <span className="font-bold text-slate-800 block text-xs uppercase tracking-wide">
-              Amar Putusan Acara Cepat (Mengesampingkan Pasal 13–35):
+              Amar Putusan Acara Cepat:
             </span>
 
             <div className="flex gap-4">

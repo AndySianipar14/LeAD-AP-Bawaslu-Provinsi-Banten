@@ -240,7 +240,7 @@ export function validateBisnisPerkara(perkara: Partial<Perkara>): { valid: boole
   if (perkara.jalur === 'tsm') {
     const jenisTerlapor = perkara.terlapor?.jenis;
     if (jenisTerlapor !== 'Pasangan Calon' && jenisTerlapor !== 'Calon Anggota DPR/DPD/DPRD') {
-      errors.push('Pada jalur TSM, Terlapor dibatasi hanya Calon atau Pasangan Calon (Pasal 59).');
+      errors.push('Pada jalur TSM, Terlapor dibatasi hanya Calon atau Pasangan Calon.');
     }
   }
 
@@ -248,9 +248,9 @@ export function validateBisnisPerkara(perkara: Partial<Perkara>): { valid: boole
   if (perkara.penetapan) {
     const totalMajelis = 1 + (perkara.penetapan.anggota_majelis?.length || 0);
     if (perkara.jalur === 'tsm' && totalMajelis < 3) {
-      errors.push('Majelis Pemeriksa untuk jalur TSM paling sedikit 3 orang (Pasal 67).');
+      errors.push('Majelis Pemeriksa untuk jalur TSM paling sedikit 3 orang.');
     } else if (totalMajelis < 2) {
-      errors.push('Majelis Pemeriksa paling sedikit 2 orang (Pasal 17).');
+      errors.push('Majelis Pemeriksa paling sedikit 2 orang.');
     }
   }
 
@@ -258,7 +258,7 @@ export function validateBisnisPerkara(perkara: Partial<Perkara>): { valid: boole
   if (perkara.status === 'S09' || perkara.putusan) {
     const buktiSah = (perkara.alat_bukti || []).filter((b) => Boolean(b.tgl_disahkan));
     if (buktiSah.length < 2) {
-      errors.push('Putusan tidak dapat disimpan bila jumlah alat bukti yang disahkan kurang dari 2 alat bukti (Pasal 36 ayat 2).');
+      errors.push('Putusan tidak dapat disimpan bila jumlah alat bukti yang disahkan kurang dari 2 alat bukti sah.');
     }
   }
 

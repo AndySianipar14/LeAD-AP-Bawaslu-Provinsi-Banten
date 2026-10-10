@@ -79,7 +79,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       key: 'mendekati_batas',
       title: 'Mendekati Batas Waktu',
       count: mendekatiBatasCount,
-      sub: 'Sisa ≤ 5 Hari Kerja (Pasal 36)',
+      sub: 'Sisa ≤ 5 Hari Kerja',
       icon: <AlertTriangle className="w-5 h-5 text-red-600 animate-bounce" />,
       borderColor: 'border-red-500',
       activeColor: 'bg-red-50 border-red-600 ring-2 ring-red-500',

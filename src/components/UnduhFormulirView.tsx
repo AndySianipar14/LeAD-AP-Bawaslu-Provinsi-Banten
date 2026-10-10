@@ -22,12 +22,15 @@ import {
   RefreshCw,
   Copy,
   Check,
-  Sparkles
+  Sparkles,
+  Plus,
+  CloudUpload
 } from 'lucide-react';
-import { FormulirMaster, UserRole, FormulirDraftFile } from '../types/leadAp';
+import { FormulirMaster, UserRole, FormulirDraftFile, FormulirAkses } from '../types/leadAp';
 import { DAFTAR_21_FORMULIR, getDefaultFormulirContent } from '../data/daftarFormulirMaster';
 import { 
-   
+  googleSignIn,
+  getCachedAccessToken, 
   uploadDraftFormulirToDrive, 
   TARGET_DRIVE_EMAIL 
 } from '../services/googleDriveService';
@@ -47,16 +50,16 @@ export const UnduhFormulirView: React.FC<UnduhFormulirViewProps> = ({
 }) => {
   const isAdmin = currentRole === 'admin';
 
-  // State master formulir list (loaded from localStorage or initial 21 items)
+  // State master formulir list (loaded from localStorage or initial master list)
   const [formulirList, setFormulirList] = useState<FormulirMaster[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('leadap_daftar_formulir_master_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= 21) {
-          // Sinkronkan data master terbaru (penyesuaian pembagian hak akses 9, 10, 16, 17, 18 khusus Admin)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Sinkronkan data master terbaru (termasuk formulir 22 dan 23 yang baru)
           // sambil tetap mempertahankan file draft kustom yang pernah diunggah oleh admin
-          return DAFTAR_21_FORMULIR.map((masterItem) => {
+          const baseList = DAFTAR_21_FORMULIR.map((masterItem) => {
             const savedItem = parsed.find((p: any) => p.no === masterItem.no);
             if (savedItem && savedItem.draftFile) {
               return {
@@ -66,6 +69,13 @@ export const UnduhFormulirView: React.FC<UnduhFormulirViewProps> = ({
             }
             return masterItem;
           });
+
+          // Pertahankan formulir kustom tambahan (no > 23) yang pernah ditambahkan pengguna
+          const customItems = parsed.filter(
+            (p: any) => !DAFTAR_21_FORMULIR.some((m) => m.no === p.no)
+          );
+
+          return [...baseList, ...customItems];
         }
       }
     } catch (e) {
@@ -86,6 +96,20 @@ export const UnduhFormulirView: React.FC<UnduhFormulirViewProps> = ({
   const [saveToDriveOption, setSaveToDriveOption] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Modal Tambah Formulir Baru State (Admin)
+  const [showAddFormModal, setShowAddFormModal] = useState(false);
+  const [newFormKode, setNewFormKode] = useState('');
+  const [newFormPerihal, setNewFormPerihal] = useState('');
+  const [newFormRujukan, setNewFormRujukan] = useState('Perbawaslu 8/2022');
+  const [newFormAkses, setNewFormAkses] = useState<FormulirAkses>('Publik');
+  const [newFormFile, setNewFormFile] = useState<File | null>(null);
+  const [newFormSaveToDrive, setNewFormSaveToDrive] = useState(true);
+  const [isSubmittingNewForm, setIsSubmittingNewForm] = useState(false);
+  const addFormFileInputRef = useRef<HTMLInputElement>(null);
+
+  // State sinkronisasi massal Google Drive
+  const [isSyncingAllDrive, setIsSyncingAllDrive] = useState(false);
 
   // Modal Access Restricted Alert (for public attempting to download Admin-only form)
   const [restrictedModalTarget, setRestrictedModalTarget] = useState<FormulirMaster | null>(null);
@@ -171,7 +195,7 @@ export const UnduhFormulirView: React.FC<UnduhFormulirViewProps> = ({
 
   // Helper Simpan & Buka di Google Drive / Docs
   const handleExportPreviewToDrive = async (item: FormulirMaster) => {
-    const token = null;
+    const token = getCachedAccessToken();
     if (!token) {
       handleOpenGoogleDocs(item);
       return;
@@ -281,90 +305,285 @@ export const UnduhFormulirView: React.FC<UnduhFormulirViewProps> = ({
   };
 
   // Process file upload by Admin
-const handleSaveUpload = async () => {
+  const handleSaveUpload = async () => {
     if (!uploadTarget || !uploadFile) {
       showToast('Pilih berkas draft yang akan diunggah.', 'error');
       return;
     }
 
     setIsUploading(true);
-    showToast('Sedang memproses dan mengunggah berkas ke Google Drive...', 'info');
-
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(uploadFile);
-      
-      reader.onload = async () => {
-        const base64Data = reader.result.split(',')[1]; 
+      // Convert to base64 for persistent storage in localStorage
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(uploadFile);
+      });
 
-        const payload = {
-          aksi: "upload_berkas",
-          nama_sheet: "Dokumen_Resmi", 
-          nama_file: uploadFile.name,
-          tipe_file: uploadFile.type,
-          file_base64: base64Data,
-          isi_data: [
-            uploadTarget.no || "REG-000", 
-            uploadTarget.kode || "FORM",  
-            uploadFile.name,              
-            new Date().toLocaleString(),  
-            uploadFile.type               
-          ] 
-        };
+      const fileExtension = uploadFile.name.split('.').pop()?.toLowerCase() || 'docx';
+      const formattedSize = uploadFile.size > 1024 * 1024 
+        ? `${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(uploadFile.size / 1024)} KB`;
 
-        // === MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI BAWAH INI ===
-        const scriptURL = "https://script.google.com/macros/s/AKfycby3MSHFTmGf-pkO_LAndeZbZgsVZJc_w__z_2bAjbzYESvCKlXUzX_ZBr4aN7VNX_gG/exec";
+      let driveLink = '';
+      let driveFileId = '';
 
-        const response = await fetch(scriptURL, {
-          method: "POST",
-          body: JSON.stringify(payload)
+      // Upload ke Google Drive jika opsi dicentang
+      let token = getCachedAccessToken();
+      if (saveToDriveOption) {
+        if (!token) {
+          try {
+            const authRes = await googleSignIn();
+            if (authRes) {
+              token = authRes.accessToken;
+            }
+          } catch (driveAuthErr) {
+            console.warn('Google Drive auth dilewati / dibatalkan:', driveAuthErr);
+          }
+        }
+
+        if (token) {
+          try {
+            const driveRes = await uploadDraftFormulirToDrive(
+              token,
+              uploadFile,
+              uploadTarget.kode
+            );
+            driveLink = driveRes.webViewLink || '';
+            driveFileId = driveRes.id;
+          } catch (driveErr) {
+            console.warn('Gagal upload ke Google Drive, tetap simpan lokal:', driveErr);
+          }
+        }
+      }
+
+      const draftInfo: FormulirDraftFile = {
+        namaFile: uploadFile.name,
+        ukuran: formattedSize,
+        tipe: fileExtension,
+        tglUpload: new Date().toISOString().split('T')[0],
+        uploadedBy: 'Administrator Bawaslu',
+        catatan: uploadCatatan.trim(),
+        driveFileId,
+        driveUrl: driveLink,
+        dataUrl: base64Data
+      };
+
+      const updated = formulirList.map((f) => {
+        if (f.no === uploadTarget.no) {
+          return {
+            ...f,
+            draftFile: draftInfo
+          };
+        }
+        return f;
+      });
+
+      saveFormulirList(updated);
+      setIsUploading(false);
+      setUploadTarget(null);
+      showToast(
+        `Draft formulir "${uploadTarget.kode}" berhasil diunggah (${uploadFile.name})${driveLink ? ' & disinkronkan ke Google Drive!' : '!'}`
+      );
+    } catch (err) {
+      console.error(err);
+      setIsUploading(false);
+      showToast('Gagal memproses unggahan berkas.', 'error');
+    }
+  };
+
+  // Sinkronkan berkas draft spesifik ke Google Drive
+  const handleSyncFileToDrive = async (item: FormulirMaster) => {
+    if (!item.draftFile?.dataUrl) {
+      showToast('Tidak ada data berkas yang dapat disinkronkan.', 'error');
+      return;
+    }
+
+    let token = getCachedAccessToken();
+    if (!token) {
+      try {
+        const authRes = await googleSignIn();
+        if (!authRes) return;
+        token = authRes.accessToken;
+      } catch (authErr: any) {
+        showToast('Gagal menghubungkan Google Drive: ' + authErr.message, 'error');
+        return;
+      }
+    }
+
+    showToast(`Mengunggah "${item.draftFile.namaFile}" ke Google Drive...`, 'info');
+    try {
+      const res = await fetch(item.draftFile.dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], item.draftFile.namaFile, { type: blob.type });
+
+      const driveRes = await uploadDraftFormulirToDrive(token, file, item.kode);
+      const updated = formulirList.map((f) => {
+        if (f.no === item.no && f.draftFile) {
+          return {
+            ...f,
+            draftFile: {
+              ...f.draftFile,
+              driveFileId: driveRes.id,
+              driveUrl: driveRes.webViewLink || ''
+            }
+          };
+        }
+        return f;
+      });
+
+      saveFormulirList(updated);
+      showToast(`Berkas "${item.draftFile.namaFile}" berhasil disimpan ke Google Drive!`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast('Gagal menyimpan ke Google Drive: ' + err.message, 'error');
+    }
+  };
+
+  // Sinkronkan semua berkas yang belum tersimpan di Drive secara massal
+  const handleSyncAllFilesToDrive = async () => {
+    let token = getCachedAccessToken();
+    if (!token) {
+      try {
+        const authRes = await googleSignIn();
+        if (!authRes) return;
+        token = authRes.accessToken;
+      } catch (authErr: any) {
+        showToast('Gagal menghubungkan Google Drive: ' + authErr.message, 'error');
+        return;
+      }
+    }
+
+    const itemsToSync = formulirList.filter(
+      (f) => f.draftFile && f.draftFile.dataUrl && !f.draftFile.driveUrl
+    );
+
+    if (itemsToSync.length === 0) {
+      showToast('Seluruh berkas formulir sudah tersinkronkan ke Google Drive.', 'info');
+      return;
+    }
+
+    setIsSyncingAllDrive(true);
+    showToast(`Menyinkronkan ${itemsToSync.length} berkas ke Google Drive (${TARGET_DRIVE_EMAIL})...`, 'info');
+    let successCount = 0;
+    let updatedList = [...formulirList];
+
+    for (const item of itemsToSync) {
+      if (!item.draftFile?.dataUrl) continue;
+      try {
+        const res = await fetch(item.draftFile.dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], item.draftFile.namaFile, { type: blob.type });
+        const driveRes = await uploadDraftFormulirToDrive(token, file, item.kode);
+
+        updatedList = updatedList.map((f) => {
+          if (f.no === item.no && f.draftFile) {
+            return {
+              ...f,
+              draftFile: {
+                ...f.draftFile,
+                driveFileId: driveRes.id,
+                driveUrl: driveRes.webViewLink || ''
+              }
+            };
+          }
+          return f;
+        });
+        successCount++;
+      } catch (e) {
+        console.warn(`Gagal sync berkas ${item.kode}:`, e);
+      }
+    }
+
+    saveFormulirList(updatedList);
+    setIsSyncingAllDrive(false);
+    showToast(`Berhasil menyimpan ${successCount} dari ${itemsToSync.length} berkas ke Google Drive!`, 'success');
+  };
+
+  // Tambah formulir baru oleh Administrator
+  const handleAddNewForm = async () => {
+    if (!newFormKode.trim() || !newFormPerihal.trim()) {
+      showToast('Lengkapi Kode dan Perihal formulir.', 'error');
+      return;
+    }
+
+    setIsSubmittingNewForm(true);
+    try {
+      let draftInfo: FormulirDraftFile | undefined = undefined;
+
+      if (newFormFile) {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(newFormFile);
         });
 
-        const result = await response.json();
+        let driveLink = '';
+        let driveFileId = '';
+        let token = getCachedAccessToken();
 
-        if (result.sukses) {
-          showToast('Berhasil! Berkas tersimpan permanen di Database & Drive.', 'success');
-          
-          // Mengubah status formulir di tampilan lokal agar terlihat sudah diunggah
-          const draftInfo = {
-            namaFile: uploadFile.name,
-            ukuran: uploadFile.name.split('.').pop()?.toLowerCase() || 'docx',
-            tipe: uploadFile.type,
-            tglUpload: new Date().toISOString().split('T')[0],
-            uploadedBy: 'Administrator Bawaslu',
-            catatan: 'Tersimpan Permanen',
-            driveFileId: 'GAS-Managed',
-            driveUrl: result.url_file, // Mengambil link Drive dari balasan Apps Script
-            dataUrl: 'Teramankan'
-          };
-
-          const updated = formulirList.map((f) => {
-            if (f.no === uploadTarget.no) {
-              return { ...f, draftFile: draftInfo };
+        if (newFormSaveToDrive) {
+          if (!token) {
+            try {
+              const authRes = await googleSignIn();
+              if (authRes) token = authRes.accessToken;
+            } catch (e) {
+              console.warn('Sign in dilewati:', e);
             }
-            return f;
-          });
+          }
 
-          saveFormulirList(updated);
-          
-          setUploadFile(null);
-          setUploadTarget(null);
-        } else {
-          showToast('Gagal: ' + result.pesan, 'error');
+          if (token) {
+            try {
+              const driveRes = await uploadDraftFormulirToDrive(token, newFormFile, newFormKode);
+              driveLink = driveRes.webViewLink || '';
+              driveFileId = driveRes.id;
+            } catch (e) {
+              console.warn('Drive upload error:', e);
+            }
+          }
         }
-        setIsUploading(false);
+
+        const fileExtension = newFormFile.name.split('.').pop()?.toLowerCase() || 'docx';
+        const formattedSize = newFormFile.size > 1024 * 1024 
+          ? `${(newFormFile.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.round(newFormFile.size / 1024)} KB`;
+
+        draftInfo = {
+          namaFile: newFormFile.name,
+          ukuran: formattedSize,
+          tipe: fileExtension,
+          tglUpload: new Date().toISOString().split('T')[0],
+          uploadedBy: 'Administrator Bawaslu',
+          driveFileId,
+          driveUrl: driveLink,
+          dataUrl: base64Data
+        };
+      }
+
+      const nextNo = formulirList.reduce((max, f) => Math.max(max, f.no), 0) + 1;
+      const newFormItem: FormulirMaster = {
+        no: nextNo,
+        kode: newFormKode.trim(),
+        perihal: newFormPerihal.trim(),
+        rujukan: newFormRujukan.trim() || 'Perbawaslu 8/2022',
+        keterangan: newFormAkses,
+        draftFile: draftInfo
       };
 
-      reader.onerror = (error) => {
-        console.error("Gagal membaca file:", error);
-        showToast('Terjadi kesalahan saat memproses file.', 'error');
-        setIsUploading(false);
-      };
-
-    } catch (error) {
-      console.error("Upload error:", error);
-      showToast('Sistem gagal terhubung ke server.', 'error');
-      setIsUploading(false);
+      const updated = [...formulirList, newFormItem];
+      saveFormulirList(updated);
+      setIsSubmittingNewForm(false);
+      setShowAddFormModal(false);
+      setNewFormKode('');
+      setNewFormPerihal('');
+      setNewFormFile(null);
+      showToast(`Formulir "${newFormItem.kode}" berhasil ditambahkan!`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      setIsSubmittingNewForm(false);
+      showToast('Gagal menambahkan formulir baru: ' + err.message, 'error');
     }
   };
 
@@ -482,12 +701,35 @@ const handleSaveUpload = async () => {
               </div>
             )}
 
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddFormModal(true)}
+                className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Tambah formulir baru ke daftar direktori"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Tambah Formulir</span>
+              </button>
+            )}
+
+            {isAdmin && (
+              <button
+                onClick={handleSyncAllFilesToDrive}
+                disabled={isSyncingAllDrive}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                title="Simpan semua file unggahan formulir ke Google Drive"
+              >
+                <CloudUpload className={`w-3.5 h-3.5 ${isSyncingAllDrive ? 'animate-bounce' : ''}`} />
+                <span>{isSyncingAllDrive ? 'Menyinkronkan...' : 'Sinkronkan File ke Drive'}</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenDriveManager}
-              className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-              title="Google Drive Bawaslu Banten"
+              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+              title="Kelola Google Drive Bawaslu Banten"
             >
-              <HardDrive className="w-3.5 h-3.5" />
+              <HardDrive className="w-3.5 h-3.5 text-blue-600" />
               <span className="hidden sm:inline">Drive:</span>
               <span className="font-mono text-[11px] truncate max-w-[170px]">{TARGET_DRIVE_EMAIL}</span>
             </button>
@@ -680,7 +922,7 @@ const handleSaveUpload = async () => {
                       {isAdmin && (
                         <td className="py-3.5 px-4 align-top text-center">
                           {hasCustomDraft ? (
-                            <div className="bg-slate-100 border border-slate-200 rounded-lg p-2 text-left space-y-0.5">
+                            <div className="bg-slate-100 border border-slate-200 rounded-lg p-2 text-left space-y-1">
                               <div className="flex items-center gap-1 font-semibold text-slate-800 truncate text-[11px]" title={item.draftFile?.namaFile}>
                                 <FileIcon className="w-3 h-3 text-blue-600 shrink-0" />
                                 <span className="truncate">{item.draftFile?.namaFile}</span>
@@ -689,6 +931,30 @@ const handleSaveUpload = async () => {
                                 <span>{item.draftFile?.ukuran || 'File'}</span>
                                 <span>{item.draftFile?.tglUpload}</span>
                               </div>
+                              {/* Indikator Status Google Drive */}
+                              {item.draftFile?.driveUrl ? (
+                                <a
+                                  href={item.draftFile.driveUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded transition-colors"
+                                  title="Berkas tersimpan di Google Drive - Klik untuk buka"
+                                >
+                                  <HardDrive className="w-3 h-3 text-emerald-600" />
+                                  <span>Tersimpan di Drive</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSyncFileToDrive(item)}
+                                  className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                                  title="Simpan berkas ini ke Google Drive sekarang"
+                                >
+                                  <UploadCloud className="w-3 h-3 text-blue-600" />
+                                  <span>Simpan ke Drive</span>
+                                </button>
+                              )}
                             </div>
                           ) : (
                             <span className="text-[11px] text-slate-500 italic bg-slate-50 px-2 py-1 rounded border border-slate-100 inline-block">
@@ -860,20 +1126,38 @@ const handleSaveUpload = async () => {
               </div>
 
               {/* Checkbox Simpan ke Google Drive */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={saveToDriveOption}
-                    onChange={(e) => setSaveToDriveOption(e.target.checked)}
-                    className="rounded text-blue-600"
-                  />
-                  <span className="font-bold text-blue-950 text-xs">
-                    Simpan juga salinan ke Google Drive resmi
-                  </span>
-                </label>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveToDriveOption}
+                      onChange={(e) => setSaveToDriveOption(e.target.checked)}
+                      className="rounded text-blue-600"
+                    />
+                    <span className="font-bold text-blue-950 text-xs">
+                      Simpan juga salinan ke Google Drive resmi
+                    </span>
+                  </label>
+                  {!getCachedAccessToken() && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await googleSignIn();
+                          showToast('Berhasil terhubung ke Google Drive!');
+                        } catch (e: any) {
+                          showToast('Gagal menghubungkan Google Drive: ' + e.message, 'error');
+                        }
+                      }}
+                      className="text-[11px] font-bold text-blue-700 bg-white hover:bg-blue-100 border border-blue-300 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                    >
+                      🔗 Hubungkan Drive
+                    </button>
+                  )}
+                </div>
                 <p className="text-[11px] text-blue-800 pl-5 font-mono">
-                  Target: {TARGET_DRIVE_EMAIL} (Folder 02_Dokumen_Sidang_Resmi)
+                  Target Akun: {TARGET_DRIVE_EMAIL} (Folder 02_Dokumen_Sidang_Resmi)
                 </p>
               </div>
 
@@ -1414,6 +1698,167 @@ const handleSaveUpload = async () => {
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Ya, Hapus Draft</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL 5: Tambah Formulir Baru (Admin) */}
+      {showAddFormModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-slate-900 text-white p-4 px-6 flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-amber-500 text-slate-950 rounded-xl font-bold">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white">Tambah Formulir / Format Baru</h3>
+                  <p className="text-xs text-slate-400">Direktori Naskah Dinas Resmi Bawaslu</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddFormModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold text-slate-800 block mb-1">
+                  Kode / Nama Model Formulir <span className="text-rose-600">*</span>:
+                </label>
+                <input
+                  type="text"
+                  value={newFormKode}
+                  onChange={(e) => setNewFormKode(e.target.value)}
+                  placeholder="Misal: FORMULIR MODEL ADM.TAMBAHAN atau SURAT KUASA"
+                  className="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white text-xs font-mono font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-800 block mb-1">
+                  Perihal / Judul Dokumen <span className="text-rose-600">*</span>:
+                </label>
+                <textarea
+                  value={newFormPerihal}
+                  onChange={(e) => setNewFormPerihal(e.target.value)}
+                  placeholder="Uraian perihal dokumen resmi atau naskah persidangan..."
+                  rows={2}
+                  className="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-800 block mb-1">
+                    Dasar Regulasi / Rujukan:
+                  </label>
+                  <input
+                    type="text"
+                    value={newFormRujukan}
+                    onChange={(e) => setNewFormRujukan(e.target.value)}
+                    placeholder="Perbawaslu 8/2022 atau Juknis 169"
+                    className="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-800 block mb-1">
+                    Hak Akses Unduh:
+                  </label>
+                  <select
+                    value={newFormAkses}
+                    onChange={(e) => setNewFormAkses(e.target.value as FormulirAkses)}
+                    className="w-full p-2.5 border rounded-xl bg-slate-50 focus:bg-white text-xs font-bold"
+                  >
+                    <option value="Publik">Publik (Terbuka untuk Umum)</option>
+                    <option value="Admin">Admin (Khusus Internal)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Upload Draft File (Opsional) */}
+              <div>
+                <label className="font-bold text-slate-800 block mb-1">
+                  Unggah Berkas Format / Template (Opsional):
+                </label>
+                <input
+                  type="file"
+                  ref={addFormFileInputRef}
+                  accept=".docx,.doc,.pdf,.rtf,.txt"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) setNewFormFile(f);
+                  }}
+                  className="hidden"
+                />
+                <div
+                  onClick={() => addFormFileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-300 hover:border-amber-500 bg-slate-50 p-3.5 rounded-xl text-center cursor-pointer transition-colors"
+                >
+                  {newFormFile ? (
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-blue-900 truncate">{newFormFile.name}</span>
+                      <span className="text-[11px] text-slate-500">{(newFormFile.size / 1024).toFixed(1)} KB</span>
+                    </div>
+                  ) : (
+                    <div className="text-slate-500">
+                      <UploadCloud className="w-5 h-5 mx-auto mb-1 text-slate-400" />
+                      <span>Klik untuk menyertakan berkas template (.doc / .docx / .pdf)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Opsi Simpan ke Google Drive */}
+              {newFormFile && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-blue-950">
+                    <input
+                      type="checkbox"
+                      checked={newFormSaveToDrive}
+                      onChange={(e) => setNewFormSaveToDrive(e.target.checked)}
+                      className="rounded text-blue-600"
+                    />
+                    <span>Simpan juga berkas ini langsung ke Google Drive resmi</span>
+                  </label>
+                  <p className="text-[11px] text-blue-800 pl-5 font-mono">
+                    Target: {TARGET_DRIVE_EMAIL}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddFormModal(false)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  disabled={isSubmittingNewForm}
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddNewForm}
+                  disabled={isSubmittingNewForm || !newFormKode.trim() || !newFormPerihal.trim()}
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  {isSubmittingNewForm ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Tambahkan Formulir</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

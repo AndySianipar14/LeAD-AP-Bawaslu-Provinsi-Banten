@@ -181,13 +181,13 @@ export const EditPerkaraModal: React.FC<EditPerkaraModalProps> = ({
                 className="w-full p-2 border rounded-lg bg-white font-semibold"
               >
                 <option value="Luring">Sidang Luring (Tatap Muka)</option>
-                <option value="Daring">Sidang Daring (Pasal 35)</option>
+                <option value="Daring">Sidang Daring (Online)</option>
               </select>
             </div>
 
             {modeSidang === 'Daring' && (
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Alasan Sidang Daring (Pasal 35 ayat 2):</label>
+                <label className="font-bold text-slate-700 block mb-1">Alasan Sidang Daring:</label>
                 <input
                   type="text"
                   value={alasanDaring}

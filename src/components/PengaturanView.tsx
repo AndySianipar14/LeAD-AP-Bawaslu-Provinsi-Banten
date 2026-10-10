@@ -93,7 +93,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({ onOpenDriveManag
               PENGATURAN SISTEM & MASTER DATA LeAD-AP
             </h2>
             <p className="text-xs text-slate-300 mt-1">
-              Kalender hari kerja resmi Bawaslu (Pasal 1 angka 37), kode wilayah peradilan pemilu, dan konfigurasi ambang batas timer HK.
+              Kalender hari kerja resmi Bawaslu, kode wilayah peradilan pemilu, dan konfigurasi ambang batas timer HK.
             </p>
           </div>
         </div>
@@ -167,8 +167,8 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({ onOpenDriveManag
         {activeSubTab === 'kalender' && (
           <div className="p-5 space-y-4 text-xs">
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 leading-relaxed">
-              <strong className="block mb-0.5">Aturan Penghitungan Waktu (Bab 5.2):</strong>
-              Seluruh tenggat waktu dalam Perbawaslu 8/2022 dihitung dalam <strong>Hari Kerja</strong> (Pasal 1 angka 37),
+              <strong className="block mb-0.5">Aturan Penghitungan Waktu:</strong>
+              Seluruh tenggat waktu dihitung dalam <strong>Hari Kerja</strong>,
               yaitu hari Senin sampai dengan Jumat, tidak termasuk hari libur nasional dan cuti bersama yang ditetapkan Pemerintah.
             </div>
 
@@ -251,7 +251,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({ onOpenDriveManag
         {activeSubTab === 'wilayah' && (
           <div className="p-5 space-y-4 text-xs">
             <span className="font-bold text-slate-800 block text-xs uppercase tracking-wide">
-              Daftar Tabel Referensi Kode Wilayah Bawaslu (Perbawaslu 8/2022 Lampiran):
+              Daftar Tabel Referensi Kode Wilayah Bawaslu:
             </span>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">

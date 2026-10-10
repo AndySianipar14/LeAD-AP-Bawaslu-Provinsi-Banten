@@ -98,7 +98,7 @@ export interface PenetapanMajelis {
   juru_sumpah?: string;
 }
 
-export type StatusSidang = 'Terjadwal' | 'Terlaksana' | 'Ditunda';
+export type StatusSidang = 'Terjadwal' | 'Sedang Berlangsung' | 'Terlaksana' | 'Ditunda';
 
 export interface JadwalSidang {
   id: string;

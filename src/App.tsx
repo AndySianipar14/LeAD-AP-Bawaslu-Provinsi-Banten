@@ -150,7 +150,7 @@ export default function App() {
       id: 'task-' + Date.now(),
       perkara_id: newPerkara.id,
       nomor_register: newPerkara.nomor_register,
-      judul: 'Tetapkan Majelis Pemeriksa (Pasal 13)',
+      judul: 'Tetapkan Majelis Pemeriksa',
       deskripsi: `Perkara baru ${newPerkara.nomor_register} telah diregistrasi. Segera tetapkan susunan Majelis dan tim pendukung.`,
       target_role: 'admin',
       tenggat_waktu: newPerkara.tgl_registrasi,
@@ -345,9 +345,9 @@ export default function App() {
                     <AlertOctagon className="w-5 h-5 text-amber-300 shrink-0" />
                     <div>
                       <strong className="block text-amber-200">
-                        JALUR PELANGGARAN ADMINISTRATIF TSM (PASAL 55–71 PERBAWASLU 8/2022)
+                        JALUR PELANGGARAN ADMINISTRATIF TSM
                       </strong>
-                      Diperiksa oleh Bawaslu RI dengan Majelis minimal 3 orang. Khusus mengenai dugaan perbuatan Terstruktur, Sistematis, dan Masif dengan sanksi pembatalan Calon / Paslon (Pasal 69).
+                      Diperiksa oleh Bawaslu RI dengan Majelis minimal 3 orang. Khusus mengenai dugaan perbuatan Terstruktur, Sistematis, dan Masif dengan sanksi pembatalan Calon / Paslon.
                     </div>
                   </div>
                 )}
@@ -356,9 +356,9 @@ export default function App() {
                   <div className="bg-amber-600 text-slate-950 p-3.5 rounded-xl shadow-xs flex items-center justify-between gap-3 text-xs font-semibold">
                     <div>
                       <strong className="block text-slate-950 text-sm">
-                        JALUR PEMERIKSAAN ACARA CEPAT LAPANGAN (PASAL 40–43)
+                        JALUR PEMERIKSAAN ACARA CEPAT LAPANGAN
                       </strong>
-                      Diputus di hari yang sama di tempat kejadian oleh Pengawas Pemilu. Mengesampingkan ketentuan sidang Pasal 13–35.
+                      Diputus di hari yang sama di tempat kejadian oleh Pengawas Pemilu.
                     </div>
                     {currentRole === 'admin' ? (
                       <button
@@ -384,9 +384,9 @@ export default function App() {
                     <Gavel className="w-5 h-5 text-amber-300 shrink-0" />
                     <div>
                       <strong className="block text-amber-200">
-                        ALUR PERMINTAAN KOREKSI PUTUSAN KE BAWASLU RI (PASAL 44–54)
+                        ALUR PERMINTAAN KOREKSI PUTUSAN KE BAWASLU RI
                       </strong>
-                      Hanya atas putusan Bawaslu Provinsi/Kab/Kota (non acara cepat) dengan tenggat pengajuan ≤ 3 HK. Pelaksanaan putusan DITUNDA selama proses koreksi (Pasal 54).
+                      Hanya atas putusan Bawaslu Provinsi/Kab/Kota (non acara cepat) dengan tenggat pengajuan ≤ 3 HK. Pelaksanaan putusan DITUNDA selama proses koreksi.
                     </div>
                   </div>
                 )}

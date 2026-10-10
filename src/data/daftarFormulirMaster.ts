@@ -147,8 +147,24 @@ export const DAFTAR_21_FORMULIR: FormulirMaster[] = [
     perihal: 'Formulir Salinan Putusan',
     rujukan: 'JUKNIS PP 169/PP.00.00/K1/05/2023',
     keterangan: 'Admin'
+  },
+  {
+    no: 22,
+    kode: 'FORMULIR MODEL ADM.NRL',
+    perihal: 'Formulir STANDAR PENOMORAN REGISTER PERKARA & TANDA PENERIMAAN BERKAS',
+    rujukan: 'JUKNIS PP 169/PP.00.00/K1/05/2023 & Perbawaslu 8/2022',
+    keterangan: 'Admin'
+  },
+  {
+    no: 23,
+    kode: 'FORMULIR DAFTAR HADIR SIDANG & TATA TERTIB',
+    perihal: 'Formulir DAFTAR HADIR PERSIDANGAN TERBUKA, SAKSI, AHLI & TATA TERTIB SIDANG',
+    rujukan: 'Perbawaslu 8/2022 & JUKNIS PP 169/PP.00.00/K1/05/2023',
+    keterangan: 'Publik'
   }
 ];
+
+export const DAFTAR_FORMULIR_MASTER = DAFTAR_21_FORMULIR;
 
 // Helper template text resmi untuk setiap formulir (bisa di-download sebagai draft doc/txt)
 export function getDefaultFormulirContent(item: FormulirMaster): string {
@@ -402,6 +418,79 @@ KETIGA      : Keputusan ini berlaku sejak tanggal ditetapkan.
 
 Ditetapkan di Serang pada tanggal .................... 2026
 KETUA BAWASLU PROVINSI BANTEN,
+
+( ......................................... )`;
+
+    case 22:
+      return `BADAN PENGAWAS PEMILIHAN UMUM
+PROVINSI BANTEN
+Jalan KH. Abdul Fatah Hasan No. 88, Cipare, Kota Serang, Banten 42117
+================================================================================
+
+FORMULIR MODEL ADM.NRL
+STANDAR FORMAT PENOMORAN BUKU REGISTER PERKARA & TANDA TERIMA PENDAFTARAN
+(Berdasarkan Juknis Bawaslu PP 169/PP.00.00/K1/05/2023 & Perbawaslu 8/2022)
+
+A. FORMAT PENOMORAN REGISTER:
+   Nomor: [Nomor Urut]/[Sumber: LP/TM]/[Kode Jenis: ADM.PL/ADM.PP/ADM.TSM]/[Tingkatan: BWSL.PROV]/[Kode Wilayah: 11.00]/[Bulan Romawi]/[Tahun]
+   Contoh: 001/LP/ADM.PL/BWSL.PROV/11.00/X/2026
+
+B. CATATAN PENDAFTARAN BUKU REGISTER:
+   1. Tanggal Penerimaan Dokumen   : ............................................
+   2. Nama Pelapor / Penemu        : ............................................
+   3. Nama Terlapor                : ............................................
+   4. Pokok Dugaan Pelanggaran     : ............................................
+   5. Petugas Pencatat Register    : ............................................
+
+C. TANDA TERIMA BERKAS PENDAFTARAN:
+   Berkas laporan/temuan telah dinyatakan lengkap syarat formal dan materiel untuk diregistrasi.
+
+Petugas Registrasi,                        Pendaftar / Pelapor,
+
+
+( ............................ )           ( ............................ )`;
+
+    case 23:
+      return `BADAN PENGAWAS PEMILIHAN UMUM
+PROVINSI BANTEN
+Jalan KH. Abdul Fatah Hasan No. 88, Cipare, Kota Serang, Banten 42117
+================================================================================
+
+FORMULIR DAFTAR HADIR PERSIDANGAN TERBUKA & TATA TERTIB PERSIDANGAN
+(Berdasarkan Perbawaslu Nomor 8 Tahun 2022)
+
+Nomor Register Perkara : ........................................................
+Hari / Tanggal Sidang  : ........................................................
+Waktu / Pukul Sidang   : .................... WIB
+Agenda Sidang          : ........................................................
+Ruang Sidang           : Ruang Sidang Utama Bawaslu Provinsi Banten
+
+I. DAFTAR HADIR MAJELIS & PANITERA:
+   1. Ketua Majelis Pemeriksa       : ........................ [ ] Hadir  [ ] Absen
+   2. Anggota Majelis Pemeriksa I   : ........................ [ ] Hadir  [ ] Absen
+   3. Anggota Majelis Pemeriksa II  : ........................ [ ] Hadir  [ ] Absen
+   4. Sekretaris Pemeriksa          : ........................ [ ] Hadir  [ ] Absen
+   5. Perisalah Sidang              : ........................ [ ] Hadir  [ ] Absen
+
+II. DAFTAR HADIR PARA PIHAK:
+   1. Pelapor / Penemu              : ........................ Tanda Tangan: ..........
+   2. Kuasa Hukum Pelapor           : ........................ Tanda Tangan: ..........
+   3. Terlapor                      : ........................ Tanda Tangan: ..........
+   4. Kuasa Hukum Terlapor          : ........................ Tanda Tangan: ..........
+
+III. DAFTAR HADIR SAKSI / AHLI:
+   1. Saksi / Ahli I                : ........................ Tanda Tangan: ..........
+   2. Saksi / Ahli II               : ........................ Tanda Tangan: ..........
+
+IV. TATA TERTIB PERSIDANGAN TERBUKA BAWASLU:
+   1. Mengenakan pakaian sopan dan rapi.
+   2. Bersikap hormat dan tertib di ruang sidang.
+   3. Menonaktifkan nada dering telepon genggam.
+   4. Dilarang membawa senjata tajam atau benda berbahaya.
+   5. Dilarang membuat kegaduhan selama persidangan berlangsung.
+
+Sekretaris Pemeriksa Sidang,
+
 
 ( ......................................... )`;
 

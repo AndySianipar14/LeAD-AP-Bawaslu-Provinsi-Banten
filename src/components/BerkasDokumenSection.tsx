@@ -295,10 +295,10 @@ export const BerkasDokumenSection: React.FC<BerkasDokumenSectionProps> = ({
           <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
           <div>
             <span className="font-bold text-amber-300 block">
-              Daftar Unggahan Berkas Dokumen Resmi Persidangan (Pasal 24-34 Perbawaslu 8/2022)
+              Daftar Unggahan Berkas Dokumen Resmi Persidangan
             </span>
             <span className="text-[11px] text-slate-300">
-              Dokumen yang diunggah dapat dilihat (pratinjau) dan diunduh oleh para pihak serta publik dalam format PDF asli.
+              Dokumen yang diunggah dapat dilihat (pratinjau) dan diunduh oleh para pihak dalam format PDF asli.
             </span>
           </div>
         </div>

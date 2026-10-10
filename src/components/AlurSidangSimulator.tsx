@@ -265,7 +265,7 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
             <div className="space-y-4">
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
                 <span className="font-bold text-amber-950 block text-sm">
-                  Pemeriksaan Kehadiran Para Pihak (Pasal 20 Perbawaslu 8/2022)
+                  Pemeriksaan Kehadiran Para Pihak
                 </span>
                 <p className="text-amber-900 leading-relaxed">
                   Ketua Majelis membuka sidang (ketuk palu 3x), memeriksa identitas para pihak, dan surat kuasa khusus.
@@ -317,7 +317,7 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
               {/* Konsekuensi Pasal 20 */}
               <div className="p-4 bg-slate-900 text-white rounded-xl space-y-2 border-l-4 border-amber-500">
                 <span className="text-amber-400 font-bold text-xs uppercase tracking-wide block">
-                  Konsekuensi Hukum Pasal 20 ayat (2)–(4):
+                  Konsekuensi Hukum Kehadiran Para Pihak:
                 </span>
                 {!hadirPelapor && hadirTerlapor && (
                   <p className="text-slate-200">
@@ -348,7 +348,7 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
             <div className="space-y-4">
               <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl space-y-1">
                 <span className="font-bold text-blue-950 block text-sm">
-                  Agenda 1: Pembacaan Laporan/Temuan & Perbaikan Materi (Pasal 21)
+                  Agenda 1: Pembacaan Laporan/Temuan & Perbaikan Materi
                 </span>
                 <p className="text-blue-900 leading-relaxed">
                   Pelapor/Penemu membacakan materi laporan. Perbaikan materi pokok hanya diperbolehkan paling banyak 1 (satu) kali sebelum jawaban Terlapor.
@@ -397,7 +397,7 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
             <div className="space-y-4">
               <div className="p-3.5 bg-teal-50 border border-teal-200 rounded-xl space-y-1">
                 <span className="font-bold text-teal-950 block text-sm">
-                  Agenda 2: Jawaban Terlapor (Pasal 22, Formulir ADM.JAWABAN)
+                  Agenda 2: Jawaban Terlapor (Formulir ADM.JAWABAN)
                 </span>
                 <p className="text-teal-900 leading-relaxed">
                   Terlapor membacakan dan menyerahkan jawaban tertulis dalam 3 (tiga) rangkap fisik beserta softcopy.
@@ -433,7 +433,7 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
             <div className="space-y-4">
               <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
                 <span className="font-bold text-amber-950 block text-sm">
-                  Agenda 3: Pemeriksaan Alat Bukti & Saksi/Ahli (Pasal 23–33)
+                  Agenda 3: Pemeriksaan Alat Bukti & Saksi/Ahli
                 </span>
                 <p className="text-amber-900 leading-relaxed">
                   Pengesahan alat bukti (P-n dan T-n) diverifikasi terhadap aslinya dan disahkan dengan ketuk palu 1x.
@@ -572,14 +572,14 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
             <div className="space-y-4">
               <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-xl space-y-1">
                 <span className="font-bold text-purple-950 block text-sm">
-                  Rapat Pleno Majelis & Pembacaan Putusan Terbuka (Pasal 36–37)
+                  Rapat Pleno Majelis & Pembacaan Putusan Terbuka
                 </span>
                 <p className="text-purple-900 leading-relaxed">
                   Majelis Pemeriksa bermusyawarah secara tertutup untuk mengambil putusan berdasarkan sekurang-kurangnya 2 (dua) alat bukti yang sah.
                 </p>
               </div>
 
-              {/* Status Validasi Bukti Sah (Pasal 36 ayat 2) */}
+              {/* Status Validasi Bukti Sah */}
               <div className="p-3 bg-slate-100 rounded-xl flex items-center justify-between">
                 <span className="font-semibold text-slate-700">
                   Total Alat Bukti Disahkan: <span className="font-bold text-slate-900">{alatBuktiList.filter(b => b.tgl_disahkan).length} Bukti</span>
@@ -599,7 +599,7 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
 
               {/* Pilihan Amar */}
               <div className="space-y-2">
-                <span className="font-bold text-slate-800 block">Pilihan Amar Putusan (Pasal 37):</span>
+                <span className="font-bold text-slate-800 block">Pilihan Amar Putusan:</span>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setAmarPutusan('Terbukti')}
@@ -647,7 +647,7 @@ export const AlurSidangSimulator: React.FC<AlurSidangSimulatorProps> = ({
                       'Teguran Tertulis',
                       'Perbaikan Tata Cara Administrasi',
                       'Tidak Diikutkan dalam Tahapan Pemilu',
-                      'Pembatalan Calon / Paslon (Khusus TSM, Pasal 69)'
+                      'Pembatalan Calon / Paslon (Khusus TSM)'
                     ].map((sanksi) => {
                       const selected = sanksiTerpilih.includes(sanksi);
                       return (

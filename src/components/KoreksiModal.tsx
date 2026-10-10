@@ -75,9 +75,6 @@ export const KoreksiModal: React.FC<KoreksiModalProps> = ({
               <h2 className="text-base font-bold flex items-center gap-2">
                 <span>PENGAJUAN PERMINTAAN KOREKSI KE BAWASLU RI</span>
               </h2>
-              <p className="text-xs text-slate-300 font-mono mt-0.5">
-                Rujukan: Pasal 44–54 Peraturan Bawaslu Nomor 8 Tahun 2022
-              </p>
             </div>
           </div>
 
@@ -89,11 +86,11 @@ export const KoreksiModal: React.FC<KoreksiModalProps> = ({
           </button>
         </div>
 
-        {/* Warning Banner: Penundaan Putusan (Pasal 54) */}
+        {/* Warning Banner: Penundaan Putusan */}
         <div className="bg-red-50 p-3.5 border-b border-red-200 text-xs text-red-950 flex items-start gap-2.5">
           <AlertTriangle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold block">Pemberitahuan Akibat Hukum (Pasal 54):</span>
+            <span className="font-bold block">Pemberitahuan Akibat Hukum:</span>
             <span>
               Selama proses koreksi berjalan di Bawaslu RI, <strong>pelaksanaan putusan Bawaslu Provinsi/Kabupaten/Kota yang dikoreksi DITUNDA</strong>.
             </span>
@@ -141,7 +138,7 @@ export const KoreksiModal: React.FC<KoreksiModalProps> = ({
 
           <div>
             <label className="font-bold text-slate-700 block mb-1">
-              Alasan Koreksi (Terbatas pada Kesalahan Penerapan Hukum - Pasal 44):
+              Alasan Koreksi (Terbatas pada Kesalahan Penerapan Hukum):
             </label>
             <textarea
               value={alasanKoreksi}
@@ -161,9 +158,9 @@ export const KoreksiModal: React.FC<KoreksiModalProps> = ({
               Jadwal Waktu Koreksi Bawaslu RI:
             </span>
             <ul className="list-disc list-inside text-[11px] space-y-0.5">
-              <li>Pemberitahuan kepada pihak lawan: ≤ 1 HK setelah registrasi (Pasal 48)</li>
-              <li>Jawaban pihak lawan: ≤ 2 HK setelah menerima pemberitahuan (Pasal 49)</li>
-              <li>Pemeriksaan dokumen & Putusan Koreksi: ≤ 7 HK sejak registrasi (Pasal 51)</li>
+              <li>Pemberitahuan kepada pihak lawan: ≤ 1 HK setelah registrasi</li>
+              <li>Jawaban pihak lawan: ≤ 2 HK setelah menerima pemberitahuan</li>
+              <li>Pemeriksaan dokumen & Putusan Koreksi: ≤ 7 HK sejak registrasi</li>
             </ul>
           </div>
 

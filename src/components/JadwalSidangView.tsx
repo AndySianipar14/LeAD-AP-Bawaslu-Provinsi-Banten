@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Calendar, Video, Clock, ExternalLink, MapPin, Eye, Play, Search } from 'lucide-react';
+import { Calendar, Video, Clock, ExternalLink, MapPin, Eye, Play, Search, Youtube, AlertCircle, Radio } from 'lucide-react';
 import { Perkara, JadwalSidang } from '../types/leadAp';
+import { YouTubeStreamModal } from './YouTubeStreamModal';
 
 interface JadwalSidangViewProps {
   perkaraList: Perkara[];
@@ -15,6 +16,7 @@ export const JadwalSidangView: React.FC<JadwalSidangViewProps> = ({
 }) => {
   const [filterMode, setFilterMode] = useState<'all' | 'hari_ini' | 'minggu_ini'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeStreamItem, setActiveStreamItem] = useState<{ sidang: JadwalSidang; perkara: Perkara } | null>(null);
 
   // Kumpulkan seluruh jadwal sidang lintas perkara
   const allSidangItems: { sidang: JadwalSidang; perkara: Perkara }[] = [];
@@ -115,36 +117,51 @@ export const JadwalSidangView: React.FC<JadwalSidangViewProps> = ({
                       </div>
                     </td>
                     <td className="py-3 px-3 font-semibold text-slate-900">
-                      {sidang.agenda} (Sidang ke-{sidang.ke})
+                      <div>{sidang.agenda} (Sidang ke-{sidang.ke})</div>
+                      {sidang.status === 'Ditunda' && sidang.alasan_ditunda && (
+                        <div className="mt-1 flex items-start gap-1 text-[11px] text-amber-900 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-bold">Ditunda: </span>
+                            <span>{sidang.alasan_ditunda}</span>
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-3 text-slate-700">
                       <span className="block font-medium">{sidang.lokasi_atau_tautan}</span>
-                      <span className="text-[10px] text-slate-500">Mode: {sidang.mode}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">Mode: {sidang.mode}</span>
                     </td>
                     <td className="py-3 px-3 text-center">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-bold ${
-                          sidang.status === 'Terlaksana'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : sidang.status === 'Ditunda'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {sidang.status}
-                      </span>
+                      {sidang.status === 'Sedang Berlangsung' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-600 text-white shadow-xs animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                          <span>Live Sidang</span>
+                        </span>
+                      ) : sidang.status === 'Ditunda' ? (
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                          Ditunda
+                        </span>
+                      ) : sidang.status === 'Terlaksana' ? (
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                          Terlaksana
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                          Terjadwal
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-3 text-center">
                       {sidang.tautan_siaran ? (
-                        <a
-                          href={sidang.tautan_siaran}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded"
+                        <button
+                          onClick={() => setActiveStreamItem({ sidang, perkara })}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-red-600 hover:bg-red-500 px-2.5 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
+                          title="Tonton Siaran Langsung YouTube Sidang Terbuka"
                         >
-                          <Video className="w-3.5 h-3.5" />
-                          <span>Siaran</span>
-                        </a>
+                          <Youtube className="w-3.5 h-3.5" />
+                          <span>Nonton Live</span>
+                        </button>
                       ) : (
                         <span className="text-slate-400 text-[11px]">—</span>
                       )}
@@ -174,6 +191,14 @@ export const JadwalSidangView: React.FC<JadwalSidangViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Modal Pemutar Siaran Langsung YouTube untuk Masyarakat */}
+      <YouTubeStreamModal
+        isOpen={Boolean(activeStreamItem)}
+        onClose={() => setActiveStreamItem(null)}
+        sidang={activeStreamItem?.sidang || null}
+        perkara={activeStreamItem?.perkara || null}
+      />
     </div>
   );
 };

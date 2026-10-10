@@ -155,7 +155,7 @@ Perisalah Sidang,
 
       case 'ADM.BA-SUMPAH':
         return `BERITA ACARA SUMPAH / JANJI SAKSI DAN AHLI
-Model ADM.BA-SUMPAH (Pasal 31 Perbawaslu 8/2022)
+Model ADM.BA-SUMPAH (Berita Acara Sumpah Saksi/Ahli)
 
 Pada hari ini, dalam persidangan perkara Nomor Register: ${p.nomor_register}:
 Telah diambil sumpah/janji atas saksi/ahli:
@@ -197,7 +197,7 @@ Ketua & Seluruh Anggota Majelis
 
       case 'ADM.STATUS':
         return `PEMBERITAHUAN STATUS TEMUAN / LAPORAN DI LAMAN RESMI
-Model ADM.STATUS (Pasal 38 Perbawaslu 8/2022)
+Model ADM.STATUS (Pemberitahuan Status Putusan Resmi)
 
 Nomor Register: ${p.nomor_register}
 Tanggal Registrasi: ${p.tgl_registrasi}
@@ -214,7 +214,7 @@ Ketua Bawaslu,
 
       case 'ADM.ACARA CEPAT':
         return `FORMULIR LAPANGAN PUTUSAN PEMERIKSAAN ACARA CEPAT
-Model ADM.ACARA CEPAT (Pasal 40–43 Perbawaslu 8/2022)
+Model ADM.ACARA CEPAT (Pemeriksaan Acara Cepat)
 
 Hari/Tanggal: 08 Oktober 2028
 Waktu Kejadian: Pukul 14.15 WIB
@@ -248,7 +248,7 @@ Peraturan Bawaslu Nomor 8 Tahun 2022
 Nomor Register Perkara: ${p.nomor_register}
 Para Pihak: ${p.pelapor.nama} (Pelapor) vs ${p.terlapor.nama} (Terlapor)
 Lembaga Pemeriksa: ${p.nama_wilayah}
-Dasar Hukum: Pasal Perbawaslu No. 8 Tahun 2022
+Dasar Hukum: Tata Naskah Dinas Penyelesaian Pelanggaran Administratif Pemilu
 
 Dokumen ini disusun dan disahkan secara sah sesuai standar tata naskah dinas Badan Pengawas Pemilihan Umum.
 

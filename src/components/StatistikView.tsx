@@ -146,7 +146,7 @@ export const StatistikView: React.FC<StatistikViewProps> = ({ perkaraList }) => 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2 border-b pb-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-            <span>Rasio Amar Putusan (Pasal 37)</span>
+            <span>Rasio Amar Putusan</span>
           </h3>
 
           <div className="space-y-4 text-xs">
@@ -167,7 +167,7 @@ export const StatistikView: React.FC<StatistikViewProps> = ({ perkaraList }) => 
             </div>
 
             <div className="p-3 bg-amber-50 rounded-lg text-amber-900 text-[11px] leading-relaxed">
-              * Putusan berkekuatan hukum mengikat wajib dilaksanakan oleh KPU selambat-lambatnya 3 hari kerja sejak dibacakan (Pasal 39).
+              * Putusan berkekuatan hukum mengikat wajib dilaksanakan oleh KPU selambat-lambatnya 3 hari kerja sejak dibacakan.
             </div>
           </div>
         </div>
