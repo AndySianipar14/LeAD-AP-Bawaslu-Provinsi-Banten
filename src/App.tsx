@@ -22,19 +22,11 @@ import { AcaraCepatModal } from './components/AcaraCepatModal';
 import { RegistrasiPerkaraModal } from './components/RegistrasiPerkaraModal';
 import { EditPerkaraModal } from './components/EditPerkaraModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
-import { GoogleDriveManagerModal } from './components/GoogleDriveManagerModal';
 import { KoreksiModal } from './components/KoreksiModal';
 import { AiLegalAnalyst } from './components/AiLegalAnalyst';
 
 import { Perkara, TaskItem, UserRole } from './types/leadAp';
 import { INITIAL_PERKARA_DATA, INITIAL_TASKS } from './data/mockData';
-import { 
-  getCachedAccessToken, 
-  getCachedUser, 
-  syncDatabaseToGoogleDrive, 
-  initAuth,
-  TARGET_DRIVE_EMAIL 
-} from './services/googleDriveService';
 import { Scale, ShieldCheck, DownloadCloud, FileText, Gavel, AlertOctagon, Lock } from 'lucide-react';
 
 export default function App() {
@@ -100,20 +92,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Listen to Auth State
-  useEffect(() => {
-    const unsubscribe = initAuth(
-      (user, token) => {
-        setIsDriveConnected(true);
-      },
-      () => {
-        setIsDriveConnected(Boolean(getCachedAccessToken()));
-      }
-    );
-    return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
-    };
-  }, []);
+
 
   // Save changes to localStorage
   useEffect(() => {
@@ -468,14 +447,7 @@ export default function App() {
         currentUsername={adminUsername}
       />
 
-      {/* Google Drive Manager Modal */}
-      <GoogleDriveManagerModal
-        isOpen={isDriveManagerOpen}
-        onClose={() => setIsDriveManagerOpen(false)}
-        perkaraList={perkaraList}
-        tasks={tasks}
-        onNotify={(msg) => showToast(msg)}
-      />
+      
 
       {/* Edit Perkara Modal (Admin Only) */}
       {editingPerkara && (
