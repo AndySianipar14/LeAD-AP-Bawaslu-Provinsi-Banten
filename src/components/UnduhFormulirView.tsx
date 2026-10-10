@@ -281,78 +281,90 @@ export const UnduhFormulirView: React.FC<UnduhFormulirViewProps> = ({
   };
 
   // Process file upload by Admin
-  const handleSaveUpload = async () => {
+const handleSaveUpload = async () => {
     if (!uploadTarget || !uploadFile) {
       showToast('Pilih berkas draft yang akan diunggah.', 'error');
       return;
     }
 
     setIsUploading(true);
+    showToast('Sedang memproses dan mengunggah berkas ke Google Drive...', 'info');
+
     try {
-      // Convert to base64 for persistent storage in localStorage
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(uploadFile);
-      });
+      const reader = new FileReader();
+      reader.readAsDataURL(uploadFile);
+      
+      reader.onload = async () => {
+        const base64Data = reader.result.split(',')[1]; 
 
-      const fileExtension = uploadFile.name.split('.').pop()?.toLowerCase() || 'docx';
-      const formattedSize = uploadFile.size > 1024 * 1024 
-        ? `${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB`
-        : `${Math.round(uploadFile.size / 1024)} KB`;
+        const payload = {
+          aksi: "upload_berkas",
+          nama_sheet: "Dokumen_Resmi", 
+          nama_file: uploadFile.name,
+          tipe_file: uploadFile.type,
+          file_base64: base64Data,
+          isi_data: [
+            uploadTarget.no || "REG-000", 
+            uploadTarget.kode || "FORM",  
+            uploadFile.name,              
+            new Date().toLocaleString(),  
+            uploadFile.type               
+          ] 
+        };
 
-      let driveLink = '';
-      let driveFileId = '';
+        // === MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI BAWAH INI ===
+        const scriptURL = "https://script.google.com/macros/s/AKfycby3MSHFTmGf-pkO_LAndeZbZgsVZJc_w__z_2bAjbzYESvCKlXUzX_ZBr4aN7VNX_gG/exec";
 
-      // Optional upload to Google Drive if connected and selected
-      const token = getCachedAccessToken();
-      if (saveToDriveOption && token) {
-        try {
-          const driveRes = await uploadDraftFormulirToDrive(
-            token,
-            uploadFile,
-            uploadTarget.kode
-          );
-          driveLink = driveRes.webViewLink || '';
-          driveFileId = driveRes.id;
-        } catch (driveErr) {
-          console.warn('Gagal upload ke Google Drive, tetap simpan lokal:', driveErr);
+        const response = await fetch(scriptURL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.sukses) {
+          showToast('Berhasil! Berkas tersimpan permanen di Database & Drive.', 'success');
+          
+          // Mengubah status formulir di tampilan lokal agar terlihat sudah diunggah
+          const draftInfo = {
+            namaFile: uploadFile.name,
+            ukuran: uploadFile.name.split('.').pop()?.toLowerCase() || 'docx',
+            tipe: uploadFile.type,
+            tglUpload: new Date().toISOString().split('T')[0],
+            uploadedBy: 'Administrator Bawaslu',
+            catatan: 'Tersimpan Permanen',
+            driveFileId: 'GAS-Managed',
+            driveUrl: result.url_file, // Mengambil link Drive dari balasan Apps Script
+            dataUrl: 'Teramankan'
+          };
+
+          const updated = formulirList.map((f) => {
+            if (f.no === uploadTarget.no) {
+              return { ...f, draftFile: draftInfo };
+            }
+            return f;
+          });
+
+          saveFormulirList(updated);
+          
+          setUploadFile(null);
+          setUploadTarget(null);
+        } else {
+          showToast('Gagal: ' + result.pesan, 'error');
         }
-      }
-
-      const draftInfo: FormulirDraftFile = {
-        namaFile: uploadFile.name,
-        ukuran: formattedSize,
-        tipe: fileExtension,
-        tglUpload: new Date().toISOString().split('T')[0],
-        uploadedBy: 'Administrator Bawaslu',
-        catatan: uploadCatatan.trim(),
-        driveFileId,
-        driveUrl: driveLink,
-        dataUrl: base64Data
+        setIsUploading(false);
       };
 
-      const updated = formulirList.map((f) => {
-        if (f.no === uploadTarget.no) {
-          return {
-            ...f,
-            draftFile: draftInfo
-          };
-        }
-        return f;
-      });
+      reader.onerror = (error) => {
+        console.error("Gagal membaca file:", error);
+        showToast('Terjadi kesalahan saat memproses file.', 'error');
+        setIsUploading(false);
+      };
 
-      saveFormulirList(updated);
+    } catch (error) {
+      console.error("Upload error:", error);
+      showToast('Sistem gagal terhubung ke server.', 'error');
       setIsUploading(false);
-      setUploadTarget(null);
-      showToast(
-        `Draft formulir "${uploadTarget.kode}" berhasil diunggah (${uploadFile.name})${driveLink ? ' & disinkronkan ke Google Drive!' : '!'}`
-      );
-    } catch (err) {
-      console.error(err);
-      setIsUploading(false);
-      showToast('Gagal memproses unggahan berkas.', 'error');
     }
   };
 
